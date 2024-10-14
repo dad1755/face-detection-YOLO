@@ -7,29 +7,11 @@ from PIL import Image, ImageDraw
 from huggingface_hub import hf_hub_download
 from ultralytics import YOLO
 from supervision import Detections
-from transformers import AutoTokenizer, AutoModelForCausalLM
-
-# Load model directly
-tokenizer = AutoTokenizer.from_pretrained("openai-community/gpt2")
-model = AutoModelForCausalLM.from_pretrained("openai-community/gpt2")
+from transformers import pipeline  # Import pipeline for text generation
 
 # A simple document retrieval function
 def retrieve_documents(query, documents):
     return random.choice(documents) if documents else "No documents available for retrieval."
-
-# Define a function to run the command synchronously
-def run_command(command):
-    process = subprocess.run(
-        shlex.split(command),
-        stdout=subprocess.PIPE,
-        stderr=subprocess.PIPE,
-        text=True
-    )
-    return process.stdout, process.stderr, process.returncode
-
-# Define a function to analyze the document
-def analyze_document(document):
-    return document  # Modify as needed to extract or analyze specific details
 
 # Load the YOLO model from Hugging Face
 def load_model():
@@ -77,6 +59,10 @@ if 'documents' not in st.session_state:
 if 'model' not in st.session_state:
     st.session_state.model = load_model()
 
+# Load the Hugging Face text generation model
+if 'text_gen_model' not in st.session_state:
+    st.session_state.text_gen_model = pipeline("text-generation", model="meta-llama/Llama-3.2-1B")
+
 # Create a form for input and submission
 with st.form(key='query_form', clear_on_submit=True):
     user_query = st.text_input("Please ask something:", placeholder="Enter your query here...", max_chars=200)
@@ -93,11 +79,6 @@ if uploaded_file is not None:
         content = uploaded_file.read().decode("utf-8")
         st.session_state.documents.append(content)
         st.success("Document uploaded successfully!")
-        # Analyze document
-        if st.button("Analyze Document"):
-            analysis_result = analyze_document(content)
-            st.write("Analysis Result: Here is the content of the uploaded document:")
-            st.write(analysis_result)
     # Handle image file upload
     elif file_type in ["image/jpeg", "image/png"]:
         image = Image.open(uploaded_file)
@@ -116,34 +97,20 @@ if uploaded_file is not None:
 # Query submission logic
 if submit_button:
     if user_query:
-        with st.spinner("Analyzing and generating response..."):
-            # Tokenize the user query
-            inputs = tokenizer(user_query, return_tensors="pt")
-            # Generate a response using the model with improved settings
-            outputs = model.generate(
-                **inputs,
-                max_length=150,      # Limit the response length
-                num_return_sequences=1,
-                temperature=0.7,     # Adjust the randomness of the output
-                top_k=50,            # Limit the number of highest probability vocabulary tokens
-                top_p=0.95,          # Nucleus sampling
-                no_repeat_ngram_size=2  # Prevent repetition of phrases
-            )
-            result = tokenizer.decode(outputs[0], skip_special_tokens=True)
-
+        with st.spinner("Generating response..."):
             if st.session_state.documents:
                 retrieved_document = retrieve_documents(user_query, st.session_state.documents)
                 st.write("Retrieved Document: Here are the extracted details:")
                 st.write(retrieved_document)
-                
-            st.write("Model Response:")
+
+            # Use Hugging Face model for text generation
+            result = st.session_state.text_gen_model(user_query, max_length=100, num_return_sequences=1)[0]['generated_text']
             st.write(result)
 
         # Clear the documents after submission
         st.session_state.documents.clear()
     else:
         st.error("Please enter a query before submitting.")
-
 
 # Display message if no documents are available
 if not st.session_state.documents:
