@@ -1,0 +1,8 @@
+opencv-python
+numpy
+streamlit
+pillow
+ultralytics
+supervision
+huggingface_hub
+
