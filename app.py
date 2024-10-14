@@ -58,11 +58,11 @@ if 'model' not in st.session_state:
 
 # Create a form for input and submission
 with st.form(key='query_form', clear_on_submit=True):
-    user_query = st.text_input("Please ask something:", placeholder="Enter your query here...", max_chars=200)
+    user_query = st.text_input("Please ask something, I'm using Llama 3.2, Response may be limited:", placeholder="Enter your query here...", max_chars=200)
     submit_button = st.form_submit_button("Submit")
 
 # Add a file uploader for document and image
-uploaded_file = st.file_uploader("Upload a document (text file) or image (jpg/png)", type=["txt", "jpg", "jpeg", "png"], label_visibility="collapsed")
+uploaded_file = st.file_uploader("Upload a document (text file) or image (jpg/png)", type=["jpg", "jpeg", "png"], label_visibility="collapsed")
 
 # Process the uploaded file
 if uploaded_file is not None:
