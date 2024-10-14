@@ -19,8 +19,7 @@ jobs:
         run: |
           echo "Configuring and calling Gemini API..."
           python -c "
-import os
-import genai
+
 
 # Configure the API
 genai.configure(api_key=os.getenv('GENAI_API_KEY'))
