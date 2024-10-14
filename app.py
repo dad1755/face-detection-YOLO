@@ -1,3 +1,4 @@
+import os
 import streamlit as st
 import random
 import subprocess
@@ -9,6 +10,9 @@ from ultralytics import YOLO
 from supervision import Detections
 import torch
 from transformers import AutoTokenizer, AutoModelForCausalLM
+
+# Set your Hugging Face token
+os.environ["HUGGINGFACEHUB_API_TOKEN"] = "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"
 
 # A simple document retrieval function
 def retrieve_documents(query, documents):
