@@ -122,13 +122,13 @@ if submit_button:
                 # Log the result for debugging
                 st.write("API Response:", result)
 
-                # Check for the expected output key
-                if "generated_text" in result:
-                    generated_text = result["generated_text"]
+                # Ensure to check if the response is in the expected format
+                if isinstance(result, list) and len(result) > 0:
+                    generated_text = result[0].get("generated_text", "No generated text found.")
                     st.write("Model Response:")
                     st.write(generated_text)
                 else:
-                    st.warning("No 'generated_text' key found in the response.")
+                    st.warning("Unexpected response format.")
             else:
                 st.error(f"Error: {response.status_code} - {response.text}")
 
