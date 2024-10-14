@@ -9,10 +9,11 @@ from huggingface_hub import hf_hub_download
 from ultralytics import YOLO
 from supervision import Detections
 import torch
+from torchvision import transforms
 from transformers import AutoTokenizer, AutoModelForCausalLM
 
 # Set your Hugging Face token
-os.environ["HUGGINGFACEHUB_API_TOKEN"] = "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"
+os.environ["HUGGINGFACEHUB_API_TOKEN"] = "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"
 
 # A simple document retrieval function
 def retrieve_documents(query, documents):
@@ -38,11 +39,23 @@ def load_model():
     model = YOLO(model_path)
     return model
 
+# Function to prepare the image for YOLO
+def prepare_image(image):
+    transform = transforms.Compose([
+        transforms.Resize((640, 640)),  # Resize image to fit the model's expected input size
+        transforms.ToTensor(),           # Convert the image to a tensor
+    ])
+    return transform(image).unsqueeze(0)  # Add batch dimension
+
 # Inference function for face detection
 def detect_faces(image, model):
-    output = model(image)
-    results = Detections.from_ultralytics(output[0])
-    return results
+    try:
+        prepared_image = prepare_image(image)  # Prepare the image for YOLO
+        output = model(prepared_image)          # Pass the prepared image to the model
+        results = Detections.from_ultralytics(output[0])
+        return results
+    except Exception as e:
+        st.error(f"An error occurred during face detection: {e}")
 
 # Draw bounding boxes on the image
 def draw_bounding_boxes(image, boxes):
