@@ -13,9 +13,19 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v2
 
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.8'  # Specify your desired Python version
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install genai  # Ensure genai is installed
+
       - name: Configure and call API
         env:
           GENAI_API_KEY: ${{ secrets.GENAI_API_KEY }}
         run: |
           echo "Using the API Key"
-          python -c "import os; print(os.getenv('GENAI_API_KEY'))"
+          python -c "
