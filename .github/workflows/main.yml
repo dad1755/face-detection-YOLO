@@ -29,6 +29,6 @@ genai.configure(api_key=os.getenv('GENAI_API_KEY'))
 model = genai.GenerativeModel('gemini-1.5-flash')
 
 # Example API call (modify as needed)
-response = model.generate('Who is Google Gemini')  # Replace with actual prompt
+response = model.generate('Your prompt here')  # Replace with actual prompt
 print(response)
 "
