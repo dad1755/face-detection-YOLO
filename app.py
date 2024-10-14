@@ -52,10 +52,43 @@ def detect_faces(image, model):
     try:
         prepared_image = prepare_image(image)  # Prepare the image for YOLO
         output = model(prepared_image)          # Pass the prepared image to the model
-        results = Detections.from_ultralytics(output[0])
-        return results
+        
+        # Debugging: Log the output
+        st.write("Model output:", output)
+
+        # Check if output has the expected format
+        if len(output) > 0 and hasattr(output[0], 'boxes'):
+            results = output[0].boxes.xyxy  # Access bounding box coordinates from the output
+            return results
+        else:
+            st.error("The model output is not in the expected format.")
+            return None
+            
     except Exception as e:
         st.error(f"An error occurred during face detection: {e}")
+        return None
+
+# Inside the image upload handling block, modify this section:
+# Handle image file upload
+elif file_type in ["image/jpeg", "image/png"]:
+    image = Image.open(uploaded_file)
+
+    # Add a face detection button
+    if st.button("Face Detection"):
+        detected_faces = detect_faces(image, st.session_state.model)
+
+        # If detected_faces is None, an error has occurred
+        if detected_faces is not None:
+            # Draw bounding boxes on the image only if boxes are detected
+            if detected_faces is not None and len(detected_faces) > 0:
+                # Convert to numpy array for drawing
+                boxes = detected_faces.numpy()  # Convert to NumPy array if needed
+                image_with_boxes = draw_bounding_boxes(image.copy(), boxes)
+                st.image(image_with_boxes, caption='Detected Faces', channels="RGB")
+                st.write(f"Number of faces detected: {len(boxes)}")
+            else:
+                st.warning("No faces detected. Please try a different image.")
+
 
 # Draw bounding boxes on the image
 def draw_bounding_boxes(image, boxes):
