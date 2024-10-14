@@ -7,8 +7,11 @@ from PIL import Image, ImageDraw
 from huggingface_hub import hf_hub_download
 from ultralytics import YOLO
 from supervision import Detections
-import torch
-from transformers import pipeline, PipelineException
+from transformers import AutoTokenizer, AutoModelForCausalLM
+
+# Load model directly
+tokenizer = AutoTokenizer.from_pretrained("openai-community/gpt2")
+model = AutoModelForCausalLM.from_pretrained("openai-community/gpt2")
 
 # A simple document retrieval function
 def retrieve_documents(query, documents):
@@ -74,65 +77,34 @@ if 'documents' not in st.session_state:
 if 'model' not in st.session_state:
     st.session_state.model = load_model()
 
-# Load Hugging Face model only once
-if 'hf_pipeline' not in st.session_state:
-    model_id = "meta-llama/Meta-Llama-3-8B-Instruct"
-    access_token = "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"
-    try:
-        st.session_state.hf_pipeline = pipeline(
-            "text-generation",
-            model=model_id,
-            model_kwargs={"torch_dtype": torch.bfloat16},
-            token=access_token,
-            device_map="auto",
-        )
-        st.success("Model loaded successfully.")
-    except PipelineException as e:
-        st.error(f"Failed to load model: {str(e)}")
-    except Exception as e:
-        st.error(f"An error occurred: {str(e)}")
-
-# Function to generate a response using the Hugging Face model
-def generate_response(query):
-    model_pipeline = st.session_state.hf_pipeline
-
-    # Generate response using the model pipeline
-    response = model_pipeline(query, max_length=200, num_return_sequences=1)[0]['generated_text']
-    return response
-
 # Create a form for input and submission
 with st.form(key='query_form', clear_on_submit=True):
     user_query = st.text_input("Please ask something:", placeholder="Enter your query here...", max_chars=200)
     submit_button = st.form_submit_button("Submit")
 
 # Add a file uploader for document and image
-uploaded_file = st.file_uploader("Upload a document (text file) or image (jpg/png)", type=["jpg", "jpeg", "png"], label_visibility="collapsed")
+uploaded_file = st.file_uploader("Upload a document (text file) or image (jpg/png)", type=["txt", "jpg", "jpeg", "png"], label_visibility="collapsed")
 
 # Process the uploaded file
 if uploaded_file is not None:
     file_type = uploaded_file.type
-
     # Handle text document upload
     if file_type == "text/plain":
         content = uploaded_file.read().decode("utf-8")
         st.session_state.documents.append(content)
         st.success("Document uploaded successfully!")
-
         # Analyze document
         if st.button("Analyze Document"):
             analysis_result = analyze_document(content)
             st.write("Analysis Result: Here is the content of the uploaded document:")
             st.write(analysis_result)
-
     # Handle image file upload
     elif file_type in ["image/jpeg", "image/png"]:
         image = Image.open(uploaded_file)
-
         # Add a face detection button
         if st.button("Face Detection"):
             detected_faces = detect_faces(image, st.session_state.model)
             boxes = detected_faces.xyxy
-
             # Draw bounding boxes on the image only if boxes are detected
             if boxes is not None and len(boxes) > 0:
                 image_with_boxes = draw_bounding_boxes(image.copy(), boxes)
@@ -145,14 +117,19 @@ if uploaded_file is not None:
 if submit_button:
     if user_query:
         with st.spinner("Analyzing and generating response..."):
+            # Tokenize the user query
+            inputs = tokenizer(user_query, return_tensors="pt")
+            # Generate a response using the model
+            outputs = model.generate(**inputs, max_length=100, num_return_sequences=1)
+            result = tokenizer.decode(outputs[0], skip_special_tokens=True)
+
             if st.session_state.documents:
                 retrieved_document = retrieve_documents(user_query, st.session_state.documents)
                 st.write("Retrieved Document: Here are the extracted details:")
                 st.write(retrieved_document)
-
-            # Generate a response using the Hugging Face model
-            response = generate_response(user_query)
-            st.write(response)
+                
+            st.write("Model Response:")
+            st.write(result)
 
         # Clear the documents after submission
         st.session_state.documents.clear()
