@@ -1,23 +1,35 @@
 import streamlit as st
+import random
 import requests
+from PIL import Image, ImageDraw
+from huggingface_hub import hf_hub_download
+from ultralytics import YOLO
+from supervision import Detections
+import google.generativeai as genai
 
-# Function to call the Google Gemini API
-def query_gemini_api(prompt):
-    API_URL = 'https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash-latest:generateContent'
-    headers = {'Content-Type': 'application/json'}
-    payload = {
-        "contents": [
-            {
-                "parts": [
-                    {"text": prompt}
-                ]
-            }
-        ]
-    }
-    # Use your API key from Streamlit secrets
-    api_key = st.secrets["GEMINI_API_KEY"]
-    response = requests.post(f"{API_URL}?key={api_key}", headers=headers, json=payload)
-    return response.json()
+# A simple document retrieval function
+def retrieve_documents(query, documents):
+    return random.choice(documents) if documents else "No documents available for retrieval."
+
+# Load the YOLO model from Hugging Face
+def load_model():
+    model_path = hf_hub_download(repo_id="arnabdhar/YOLOv8-Face-Detection", filename="model.pt")
+    model = YOLO(model_path)
+    return model
+
+# Inference function for face detection
+def detect_faces(image, model):
+    output = model(image)
+    results = Detections.from_ultralytics(output[0])
+    return results
+
+# Draw bounding boxes on the image
+def draw_bounding_boxes(image, boxes):
+    draw = ImageDraw.Draw(image)
+    for box in boxes:
+        x1, y1, x2, y2 = box[:4]  # Get the bounding box coordinates
+        draw.rectangle([x1, y1, x2, y2], outline="red", width=2)  # Draw the rectangle
+    return image
 
 # Centered title with responsive styling
 st.markdown("""
@@ -41,18 +53,55 @@ st.markdown("""
 if 'documents' not in st.session_state:
     st.session_state.documents = []
 
+# Load the YOLO model only once
+if 'model' not in st.session_state:
+    st.session_state.model = load_model()
+
 # Create a form for input and submission
 with st.form(key='query_form', clear_on_submit=True):
-    user_query = st.text_input("Please ask something:", placeholder="Enter your query here...", max_chars=200)
-    submit_button = st.form_submit_button("Submit")  # This button is defined here
+    user_query = st.text_input("Please ask something, I'm using Gemini, Response may be limited:", placeholder="Enter your query here...", max_chars=200)
+    submit_button = st.form_submit_button("Submit")
 
 # Add a file uploader for document and image
-uploaded_file = st.file_uploader("Upload a document (text file) or image (jpg/png)", type=["txt", "jpg", "jpeg", "png"], label_visibility="collapsed")
+uploaded_file = st.file_uploader("Upload a document (text file) or image (jpg/png)", type=["jpg", "jpeg", "png"], label_visibility="collapsed")
 
-# Process the uploaded file (the rest of your existing logic...)
+# Process the uploaded file
+if uploaded_file is not None:
+    file_type = uploaded_file.type
+    # Handle text document upload
+    if file_type == "text/plain":
+        content = uploaded_file.read().decode("utf-8")
+        st.session_state.documents.append(content)
+        st.success("Document uploaded successfully!")
+        
+        # Analyze document
+        if st.button("Analyze Document"):
+            analysis_result = content  # For now, simply display the content
+            st.write("Analysis Result: Here is the content of the uploaded document:")
+            st.write(analysis_result)
+    
+    # Handle image file upload
+    elif file_type in ["image/jpeg", "image/png"]:
+        image = Image.open(uploaded_file)
 
-# Query submission logic (this should be outside of the form block)
-if submit_button:  # Now this will work correctly as submit_button is defined
+        # Add a face detection button
+        if st.button("Face Detection"):
+            detected_faces = detect_faces(image, st.session_state.model)
+            boxes = detected_faces.xyxy
+
+            # Draw bounding boxes on the image only if boxes are detected
+            if boxes is not None and len(boxes) > 0:
+                image_with_boxes = draw_bounding_boxes(image.copy(), boxes)
+                st.image(image_with_boxes, caption='Detected Faces', channels="RGB")
+                st.write(f"Number of faces detected: {len(boxes)}")
+            else:
+                st.warning("No faces detected. Please try a different image.")
+
+# Configure the Google Generative AI with the API key from st.secrets
+genai.configure(api_key=st.secrets["general"]["GEMINI_API_KEY"])
+
+# Replace the query submission logic
+if submit_button:
     if user_query:
         with st.spinner("Analyzing and generating response..."):
             if st.session_state.documents:
@@ -60,18 +109,23 @@ if submit_button:  # Now this will work correctly as submit_button is defined
                 st.write("Retrieved Document: Here are the extracted details:")
                 st.write(retrieved_document)
 
-            # Call the Google Gemini API with the user query
-            result = query_gemini_api(user_query)
+            # Make the request to the Gemini API
+            model = genai.GenerativeModel("gemini-1.5-flash")  # Use the appropriate model
+            response = model.generate_content(user_query)  # Pass the user's query
 
-            # Check the API response
-            if 'contents' in result and len(result['contents']) > 0:
-                generated_text = result['contents'][0]['parts'][0].get('text', 'No generated text found.')
+            # Handle the response
+            if response and hasattr(response, 'text'):
+                generated_text = response.text
                 st.write("Model Response:")
                 st.write(generated_text)  # Display the generated text cleanly
             else:
-                st.warning("Unexpected response format from Google Gemini API.")
-
+                st.warning("Unexpected response format. Ensure the API returns valid content.")
+                
         # Clear the documents after submission
         st.session_state.documents.clear()
     else:
         st.error("Please enter a query before submitting.")
+
+# Display message if no documents are available
+if not st.session_state.documents:
+    st.info("You can still ask questions even if you haven't uploaded any documents.")
