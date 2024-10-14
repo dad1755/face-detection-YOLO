@@ -1,37 +1,27 @@
 import os
-import streamlit as st
+import torch
 from transformers import pipeline
 
-# Set your API token for Hugging Face authentication
-REPLICATE_API_TOKEN = "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"
-os.environ["HUGGINGFACEHUB_API_TOKEN"] = REPLICATE_API_TOKEN
+# Set your Hugging Face API token if required
+os.environ["HUGGINGFACEHUB_API_TOKEN"] = "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"
 
-# Initialize the text generation pipeline
+# Model ID
+model_id = "meta-llama/Llama-3.2-1B"
+
 try:
-    # Use the model with the pipeline
-    pipe = pipeline("text-generation", model="meta-llama/Llama-3.2-1B")
-except OSError as e:
-    st.error("Could not load the model. Please check the model name and your internet connection.")
-    st.error(str(e))
+    # Create the text generation pipeline
+    pipe = pipeline(
+        "text-generation", 
+        model=model_id, 
+        torch_dtype=torch.bfloat16, 
+        device_map="auto"
+    )
+
+    # Generate text
+    output = pipe("The key to life is")
     
-    # Fallback to a different model (GPT-2)
-    st.warning("Falling back to GPT-2 model.")
-    pipe = pipeline("text-generation", model="gpt2")
+    # Print the generated output
+    print(output)
 
-# Streamlit UI
-st.title("Llama-3.2 Chatbot")
-user_input = st.text_input("You: ", "")
-
-if st.button("Send"):
-    if user_input.strip() == "":
-        st.warning("Please enter a message.")
-    else:
-        # Generate output using the pipeline
-        try:
-            response = pipe(user_input, max_length=100, num_return_sequences=1)
-            # Get the generated text
-            generated_text = response[0]['generated_text']
-            st.text_area("Llama-3.2:", generated_text, height=200)
-        except Exception as e:
-            st.error("Error generating response:")
-            st.error(str(e))
+except Exception as e:
+    print("Error:", str(e))
