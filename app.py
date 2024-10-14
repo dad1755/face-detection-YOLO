@@ -60,7 +60,7 @@ if 'model' not in st.session_state:
 
 # Create a form for input and submission
 with st.form(key='query_form', clear_on_submit=True):
-    user_query = st.text_input("Please ask something, I'm using Google Gemini, Response may be limited:", placeholder="Enter your query here...", max_chars=200)
+    user_query = st.text_input("Please ask something, power by Google Gemini:", placeholder="Enter your query here...", max_chars=200)
     submit_button = st.form_submit_button("Submit")
 
 # Add a file uploader for document and image
