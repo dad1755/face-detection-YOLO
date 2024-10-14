@@ -67,7 +67,7 @@ st.markdown("""
         .stFileUploader { margin-top: 20px; margin-bottom: 20px; }
     </style>
     <h1 style='text-align: center; margin: 0;'>G10</h1>
-    <h3 style='text-align: center; margin: 0;'>Face Detection Apps</h3>
+    <h3 style='text-align: center; margin: 0;'>Face Detection App</h3>
 """, unsafe_allow_html=True)
 
 # Initialize the documents list
@@ -80,8 +80,12 @@ if 'model' not in st.session_state:
 
 # Load Hugging Face model and tokenizer only once
 if 'hf_model' not in st.session_state:
-    st.session_state.tokenizer = AutoTokenizer.from_pretrained("meta-llama/Llama-3.2-1B")
-    st.session_state.model = AutoModelForCausalLM.from_pretrained("meta-llama/Llama-3.2-1B")
+    try:
+        # Use GPT-2 as a fallback
+        st.session_state.tokenizer = AutoTokenizer.from_pretrained("gpt2")
+        st.session_state.model = AutoModelForCausalLM.from_pretrained("gpt2")
+    except Exception as e:
+        st.error(f"Error loading Hugging Face model: {e}")
 
 # Function to generate a response using the Hugging Face model
 def generate_response(query):
