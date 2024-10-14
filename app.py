@@ -8,7 +8,7 @@ from huggingface_hub import hf_hub_download
 from ultralytics import YOLO
 from supervision import Detections
 import torch
-from transformers import AutoTokenizer, AutoModelForCausalLM
+from transformers import AutoTokenizer, AutoModelForCausalLM, pipeline
 
 # A simple document retrieval function
 def retrieve_documents(query, documents):
@@ -75,24 +75,23 @@ if 'model' not in st.session_state:
     st.session_state.model = load_model()
 
 # Load Hugging Face model and tokenizer only once
-if 'hf_model' not in st.session_state:
-    st.session_state.tokenizer = AutoTokenizer.from_pretrained("meta-llama/Llama-3.2-1B")
-    st.session_state.model = AutoModelForCausalLM.from_pretrained("meta-llama/Llama-3.2-1B")
+if 'hf_pipeline' not in st.session_state:
+    model_id = "meta-llama/Meta-Llama-3-8B-Instruct"
+    access_token = "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"
+    st.session_state.hf_pipeline = pipeline(
+        "text-generation",
+        model=model_id,
+        model_kwargs={"torch_dtype": torch.bfloat16},
+        token=access_token,
+        device_map="auto",
+    )
 
 # Function to generate a response using the Hugging Face model
 def generate_response(query):
-    tokenizer = st.session_state.tokenizer
-    model = st.session_state.model
+    model_pipeline = st.session_state.hf_pipeline
 
-    # Tokenize the input query
-    inputs = tokenizer(query, return_tensors="pt")
-
-    # Generate response using the model
-    with torch.no_grad():
-        outputs = model.generate(inputs["input_ids"], max_length=200)
-
-    # Decode the generated response
-    response = tokenizer.decode(outputs[0], skip_special_tokens=True)
+    # Generate response using the model pipeline
+    response = model_pipeline(query, max_length=200, num_return_sequences=1)[0]['generated_text']
     return response
 
 # Create a form for input and submission
