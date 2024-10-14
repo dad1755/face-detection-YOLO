@@ -7,3 +7,4 @@ opencv-python-headless
 transformers
 torch
 google-generativeai
+python-dotenv
