@@ -8,7 +8,7 @@ from huggingface_hub import hf_hub_download
 from ultralytics import YOLO
 from supervision import Detections
 import torch
-from transformers import AutoTokenizer, AutoModelForCausalLM, pipeline
+from transformers import pipeline, PipelineException
 
 # A simple document retrieval function
 def retrieve_documents(query, documents):
@@ -74,17 +74,23 @@ if 'documents' not in st.session_state:
 if 'model' not in st.session_state:
     st.session_state.model = load_model()
 
-# Load Hugging Face model and tokenizer only once
+# Load Hugging Face model only once
 if 'hf_pipeline' not in st.session_state:
     model_id = "meta-llama/Meta-Llama-3-8B-Instruct"
     access_token = "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"
-    st.session_state.hf_pipeline = pipeline(
-        "text-generation",
-        model=model_id,
-        model_kwargs={"torch_dtype": torch.bfloat16},
-        token=access_token,
-        device_map="auto",
-    )
+    try:
+        st.session_state.hf_pipeline = pipeline(
+            "text-generation",
+            model=model_id,
+            model_kwargs={"torch_dtype": torch.bfloat16},
+            token=access_token,
+            device_map="auto",
+        )
+        st.success("Model loaded successfully.")
+    except PipelineException as e:
+        st.error(f"Failed to load model: {str(e)}")
+    except Exception as e:
+        st.error(f"An error occurred: {str(e)}")
 
 # Function to generate a response using the Hugging Face model
 def generate_response(query):
