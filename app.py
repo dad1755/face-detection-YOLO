@@ -1,18 +1,27 @@
 import os
+import requests
 import streamlit as st
-import torch
-from transformers import AutoTokenizer, AutoModelForCausalLM
 
 # Set your API token (for security, ideally use environment variables)
 REPLICATE_API_TOKEN = "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"
 
-# Load model directly
-tokenizer = AutoTokenizer.from_pretrained("meta-llama/Llama-3.2-1B")
-model = AutoModelForCausalLM.from_pretrained("meta-llama/Llama-3.2-1B")
+# Function to call the Replicate API
+def generate_response(prompt):
+    headers = {
+        "Authorization": f"Token {REPLICATE_API_TOKEN}",
+        "Content-Type": "application/json"
+    }
+    data = {
+        "inputs": prompt
+    }
+    # Make sure to adjust the model URL based on its correct endpoint
+    response = requests.post("https://api.replicate.com/v1/models/meta-llama/Llama-3.2-1B/generate", headers=headers, json=data)
 
-# Set the device to GPU if available
-device = "cuda" if torch.cuda.is_available() else "cpu"
-model.to(device)
+    if response.status_code == 200:
+        return response.json()
+    else:
+        st.error(f"Error: {response.status_code}, {response.text}")
+        return None
 
 # Streamlit UI
 st.title("Llama-3.2 Chatbot")
@@ -22,13 +31,7 @@ if st.button("Send"):
     if user_input.strip() == "":
         st.warning("Please enter a message.")
     else:
-        # Tokenize the user input and generate a response
-        inputs = tokenizer(user_input, return_tensors="pt").to(device)
-        
-        # Generate output
-        with torch.no_grad():
-            output = model.generate(inputs["input_ids"], max_length=100, num_return_sequences=1)
-
-        # Decode the output and display it
-        response = tokenizer.decode(output[0], skip_special_tokens=True)
-        st.text_area("Llama-3.2:", response, height=200)
+        response_data = generate_response(user_input)
+        if response_data:
+            response = response_data.get("generated_text", "Sorry, I didn't get that.")
+            st.text_area("Llama-3.2:", response, height=200)
