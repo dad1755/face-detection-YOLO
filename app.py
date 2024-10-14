@@ -119,14 +119,11 @@ if submit_button:
             # Handle the response
             if response.status_code == 200:
                 result = response.json()
-                # Log the result for debugging
-                st.write("API Response:", result)
-
-                # Ensure to check if the response is in the expected format
+                # Check if the response is in the expected format
                 if isinstance(result, list) and len(result) > 0:
                     generated_text = result[0].get("generated_text", "No generated text found.")
                     st.write("Model Response:")
-                    st.write(generated_text)
+                    st.write(generated_text)  # Display the generated text cleanly
                 else:
                     st.warning("Unexpected response format. Ensure the API returns a valid JSON.")
             else:
