@@ -117,7 +117,7 @@ if submit_button:
             response = requests.post(API_URL, headers=headers, json=payload)
 
             # Handle the response
-            if response.status_code == 500:
+            if response.status_code == 200:
                 result = response.json()
                 # Check if the response is in the expected format
                 if isinstance(result, list) and len(result) > 0:
