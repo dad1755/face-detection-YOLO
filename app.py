@@ -1,27 +1,28 @@
 import os
-import requests
 import streamlit as st
+from transformers import AutoTokenizer, AutoModelForCausalLM
+import torch
 
-# Set your API token (for security, ideally use environment variables)
+# Set your API token (this token is used for Hugging Face authentication)
 REPLICATE_API_TOKEN = "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"
+os.environ["HUGGINGFACEHUB_API_TOKEN"] = REPLICATE_API_TOKEN
 
-# Function to call the Replicate API
-def generate_response(prompt):
-    headers = {
-        "Authorization": f"Token {REPLICATE_API_TOKEN}",
-        "Content-Type": "application/json"
-    }
-    data = {
-        "inputs": prompt
-    }
-    # Make sure to adjust the model URL based on its correct endpoint
-    response = requests.post("https://api.replicate.com/v1/models/meta-llama/Llama-3.2-1B/generate", headers=headers, json=data)
+# Attempt to load the Llama-3.2 model
+try:
+    tokenizer = AutoTokenizer.from_pretrained("meta-llama/Llama-3.2-1B")
+    model = AutoModelForCausalLM.from_pretrained("meta-llama/Llama-3.2-1B")
+except OSError as e:
+    st.error("Could not load the model. Please check the model name and your internet connection.")
+    st.error(str(e))
+    
+    # Fallback to a different model
+    st.warning("Falling back to GPT-2 model.")
+    tokenizer = AutoTokenizer.from_pretrained("gpt2")
+    model = AutoModelForCausalLM.from_pretrained("gpt2")
 
-    if response.status_code == 200:
-        return response.json()
-    else:
-        st.error(f"Error: {response.status_code}, {response.text}")
-        return None
+# Set the device to GPU if available
+device = "cuda" if torch.cuda.is_available() else "cpu"
+model.to(device)
 
 # Streamlit UI
 st.title("Llama-3.2 Chatbot")
@@ -31,7 +32,13 @@ if st.button("Send"):
     if user_input.strip() == "":
         st.warning("Please enter a message.")
     else:
-        response_data = generate_response(user_input)
-        if response_data:
-            response = response_data.get("generated_text", "Sorry, I didn't get that.")
-            st.text_area("Llama-3.2:", response, height=200)
+        # Tokenize the user input and generate a response
+        inputs = tokenizer(user_input, return_tensors="pt").to(device)
+        
+        # Generate output
+        with torch.no_grad():
+            output = model.generate(inputs["input_ids"], max_length=100, num_return_sequences=1)
+
+        # Decode the output and display it
+        response = tokenizer.decode(output[0], skip_special_tokens=True)
+        st.text_area("Response:", response, height=200)
