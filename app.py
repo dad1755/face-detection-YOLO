@@ -1,8 +1,12 @@
 import streamlit as st
 from transformers import AutoTokenizer, AutoModelForCausalLM
 import torch
+import os
 
-# Load the tokenizer and model directly
+# Set your Hugging Face token (keep this secure and private)
+os.environ["REPLICATE_API_TOKEN"] = "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"
+
+# Load the model and tokenizer directly from Hugging Face
 @st.cache_resource
 def load_model():
     try:
@@ -13,7 +17,7 @@ def load_model():
         st.error(f"Error loading model: {str(e)}")
         return None, None
 
-# Initialize the tokenizer and model
+# Initialize the model and tokenizer
 tokenizer, model = load_model()
 
 # Streamlit app layout
@@ -27,18 +31,15 @@ user_input = st.text_area("Prompt", "The key to life is")
 max_length = st.slider("Max Length of Output", min_value=50, max_value=300, value=150, step=10)
 
 if st.button("Generate"):
-    if user_input and tokenizer and model:
+    if user_input and model:
         with st.spinner("Generating text..."):
-            # Tokenize input
-            input_ids = tokenizer.encode(user_input, return_tensors="pt").to(model.device)
+            # Tokenize the input prompt
+            input_ids = tokenizer.encode(user_input, return_tensors='pt').to(model.device)
 
             # Generate text
-            output = model.generate(input_ids, max_length=max_length, num_return_sequences=1)
+            generated_ids = model.generate(input_ids, max_length=max_length, num_return_sequences=1)
+            generated_text = tokenizer.decode(generated_ids[0], skip_special_tokens=True)
 
-            # Decode the generated output
-            generated_text = tokenizer.decode(output[0], skip_special_tokens=True)
-
-            # Display the generated text
             st.text_area("Generated Text", generated_text, height=300)
     else:
         st.error("Please enter a prompt before generating text.")
