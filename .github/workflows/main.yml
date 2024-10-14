@@ -1,0 +1,19 @@
+name: main
+
+on:
+  push:
+    branches:
+      - main
+
+jobs:
+  your_job_name:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v2
+
+      - name: Configure Gemini API
+        run: |
+          echo "Configuring Gemini API..."
+          genai.configure(api_key="${{ secrets.GENAI_API_KEY }}")
