@@ -20,10 +20,10 @@ jobs:
 
       - name: Test API Key and import
         env:
-          GENAI_API_KEY: ${{ secrets.GENAI_API_KEY }}
+          GENAI_API_KEY: ${{ secrets.GENAI_API_KEY }}  # Make sure this is set in your GitHub secrets
         run: |
           echo "Using the API Key"
           curl \
             -H 'Content-Type: application/json' \
             -d '{"contents":[{"parts":[{"text":"Explain how AI works"}]}]}' \
-            -X POST 'https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash-latest:generateContent?key=os.getenv('GENAI_API_KEY')'
+            -X POST "https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash-latest:generateContent?key=${{ secrets.GENAI_API_KEY }}"
