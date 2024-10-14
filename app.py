@@ -6,6 +6,7 @@ from huggingface_hub import hf_hub_download
 from ultralytics import YOLO
 from supervision import Detections
 import google.generativeai as genai
+import os
 
 # A simple document retrieval function
 def retrieve_documents(query, documents):
@@ -13,13 +14,9 @@ def retrieve_documents(query, documents):
 
 # Load the YOLO model from Hugging Face
 def load_model():
-    try:
-        model_path = hf_hub_download(repo_id="arnabdhar/YOLOv8-Face-Detection", filename="model.pt")
-        model = YOLO(model_path)
-        return model
-    except Exception as e:
-        st.error("Error loading YOLO model. Please check the model path or your internet connection.")
-        return None
+    model_path = hf_hub_download(repo_id="arnabdhar/YOLOv8-Face-Detection", filename="model.pt")
+    model = YOLO(model_path)
+    return model
 
 # Inference function for face detection
 def detect_faces(image, model):
@@ -61,6 +58,11 @@ if 'documents' not in st.session_state:
 if 'model' not in st.session_state:
     st.session_state.model = load_model()
 
+# Create a form for input and submission
+with st.form(key='query_form', clear_on_submit=True):
+    user_query = st.text_input("Please ask something, I'm using Google Gemini, Response may be limited:", placeholder="Enter your query here...", max_chars=200)
+    submit_button = st.form_submit_button("Submit")
+
 # Add a file uploader for document and image
 uploaded_file = st.file_uploader("Upload a document (text file) or image (jpg/png)", type=["jpg", "jpeg", "png"], label_visibility="collapsed")
 
@@ -96,22 +98,34 @@ if uploaded_file is not None:
             else:
                 st.warning("No faces detected. Please try a different image.")
 
-# Configure the Google Generative AI with the API key from st.secrets
-genai.configure(api_key=st.secrets["general"]["GEMINI_API_KEY"])
+# Query submission logic
+if submit_button:
+    if user_query:
+        with st.spinner("Analyzing and generating response..."):
+            if st.session_state.documents:
+                retrieved_document = retrieve_documents(user_query, st.session_state.documents)
+                st.write("Retrieved Document: Here are the extracted details:")
+                st.write(retrieved_document)
 
-# Generate content using the Gemini API when the app is loaded
-with st.spinner("Generating content..."):
-    prompt = "Provide a brief overview of the YOLO model and its applications."  # Example prompt for Gemini
-    model = genai.GenerativeModel("gemini-1.5-flash")  # Use the appropriate model
-    response = model.generate_content(prompt)  # Generate content based on the prompt
+            # Prepare to use the Gemini API
+            genai.configure(api_key=st.secrets["GEMINI_API_KEY"])
+            model = genai.GenerativeModel("gemini-1.5-flash")
 
-    # Handle the response
-    if response and hasattr(response, 'text'):
-        generated_text = response.text
-        st.write("Gemini Model Response:")
-        st.write(generated_text)  # Display the generated text cleanly
+            # Generate content using the Gemini model
+            response = model.generate_content(user_query)
+
+            # Handle the response
+            if response:
+                generated_text = response.text
+                st.write("Model Response:")
+                st.write(generated_text)  # Display the generated text cleanly
+            else:
+                st.warning("No response received from the Gemini model.")
+
+        # Clear the documents after submission
+        st.session_state.documents.clear()
     else:
-        st.warning("Unexpected response format. Ensure the API returns valid content.")
+        st.error("Please enter a query before submitting.")
 
 # Display message if no documents are available
 if not st.session_state.documents:
