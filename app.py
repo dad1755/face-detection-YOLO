@@ -119,8 +119,16 @@ if submit_button:
         with st.spinner("Analyzing and generating response..."):
             # Tokenize the user query
             inputs = tokenizer(user_query, return_tensors="pt")
-            # Generate a response using the model
-            outputs = model.generate(**inputs, max_length=100, num_return_sequences=1)
+            # Generate a response using the model with improved settings
+            outputs = model.generate(
+                **inputs,
+                max_length=150,      # Limit the response length
+                num_return_sequences=1,
+                temperature=0.7,     # Adjust the randomness of the output
+                top_k=50,            # Limit the number of highest probability vocabulary tokens
+                top_p=0.95,          # Nucleus sampling
+                no_repeat_ngram_size=2  # Prevent repetition of phrases
+            )
             result = tokenizer.decode(outputs[0], skip_special_tokens=True)
 
             if st.session_state.documents:
@@ -135,6 +143,7 @@ if submit_button:
         st.session_state.documents.clear()
     else:
         st.error("Please enter a query before submitting.")
+
 
 # Display message if no documents are available
 if not st.session_state.documents:
