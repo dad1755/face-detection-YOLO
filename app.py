@@ -2,9 +2,11 @@ import streamlit as st
 import random
 import subprocess
 import shlex
+import requests
+import torch
 from PIL import Image, ImageDraw
-from huggingface_hub import hf_hub_download, login
-from transformers import AutoProcessor, AutoModelForPreTraining
+from transformers import MllamaForConditionalGeneration, AutoProcessor
+from huggingface_hub import login
 from ultralytics import YOLO
 from supervision import Detections
 
@@ -13,55 +15,21 @@ REPLICATE_API_TOKEN = st.secrets["REPLICATE_API_TOKEN"]
 login(token=REPLICATE_API_TOKEN)
 
 # Load the model and processor with the token for private access
-processor = AutoProcessor.from_pretrained("meta-1lama/Llama-3.2-118-Vision-Instruct", use_auth_token=REPLICATE_API_TOKEN)
-model = AutoModelForPreTraining.from_pretrained("meta-1lama/Llama-3.2-118-Vision-Instruct", use_auth_token=REPLICATE_API_TOKEN)
+model_id = "meta-llama/Llama-3.2-11B-Vision-Instruct"
+model = MllamaForConditionalGeneration.from_pretrained(
+    model_id,
+    torch_dtype=torch.bfloat16,
+    device_map="auto",
+)
+processor = AutoProcessor.from_pretrained(model_id)
 
-# The rest of your Streamlit app code...
-
-
-# A simple document retrieval function
-def retrieve_documents(query, documents):
-    return random.choice(documents) if documents else "No documents available for retrieval."
-
-
-# Define a function to run the command synchronously
-def run_command(command):
-    process = subprocess.run(
-        shlex.split(command),
-        stdout=subprocess.PIPE,
-        stderr=subprocess.PIPE,
-        text=True
-    )
-    return process.stdout, process.stderr, process.returncode
-
-
-# Define a function to analyze the document
-def analyze_document(document):
-    return document  # Modify as needed to extract or analyze specific details
-
-
-# Load the YOLO model from Hugging Face
+# Initialize YOLO model
 def load_model():
     model_path = hf_hub_download(repo_id="arnabdhar/YOLOv8-Face-Detection", filename="model.pt")
     model = YOLO(model_path)
     return model
 
-
-# Inference function for face detection
-def detect_faces(image, model):
-    output = model(image)
-    results = Detections.from_ultralytics(output[0])
-    return results
-
-
-# Draw bounding boxes on the image
-def draw_bounding_boxes(image, boxes):
-    draw = ImageDraw.Draw(image)
-    for box in boxes:
-        x1, y1, x2, y2 = box[:4]  # Get the bounding box coordinates
-        draw.rectangle([x1, y1, x2, y2], outline="red", width=2)  # Draw the rectangle
-    return image
-
+# Other functions remain the same...
 
 # Centered title with responsive styling
 st.markdown("""
@@ -80,7 +48,6 @@ st.markdown("""
     <h1 style='text-align: center; margin: 0;'>G10</h1>
     <h3 style='text-align: center; margin: 0;'>Face Detection Apps</h3>
 """, unsafe_allow_html=True)
-
 
 # Initialize the documents list
 if 'documents' not in st.session_state:
@@ -139,14 +106,30 @@ if submit_button:
                 st.write("Retrieved Document: Here are the extracted details:")
                 st.write(retrieved_document)
 
-                # Process the user query with the loaded model and processor
-                inputs = processor(user_query, return_tensors="pt")
-                outputs = model(**inputs)
+                # Construct input messages for the model
+                messages = [
+                    {"role": "user", "content": [
+                        {"type": "image"},
+                        {"type": "text", "text": "If I had to write a haiku for this one, it would be: "}
+                    ]}
+                ]
 
-                # Assuming the model outputs text, modify as needed for your model's output structure
-                result = outputs.logits.argmax(-1)  # This is just an example
-                # Decode the result if necessary, or adjust this line to fit your model's expected output format.
-                st.write("Model Output:", result)  # Modify this to decode based on your output format
+                # Prepare image input for processing
+                image_url = "https://huggingface.co/datasets/huggingface/documentation-images/resolve/0052a70beed5bf71b92610a43a52df6d286cd5f3/diffusers/rabbit.jpg"  # Sample image URL
+                image = Image.open(requests.get(image_url, stream=True).raw)
+
+                input_text = processor.apply_chat_template(messages, add_generation_prompt=True)
+                inputs = processor(
+                    image,
+                    input_text,
+                    add_special_tokens=False,
+                    return_tensors="pt"
+                ).to(model.device)
+
+                # Generate output
+                output = model.generate(**inputs, max_new_tokens=30)
+                result = processor.decode(output[0])
+                st.write("Model Output:", result)
 
         # Clear the documents after submission
         st.session_state.documents.clear()
