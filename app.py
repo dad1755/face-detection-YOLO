@@ -1,6 +1,5 @@
 import streamlit as st
 import requests
-import json
 
 # Function to call the Google Gemini API
 def query_gemini_api(prompt):
@@ -15,13 +14,45 @@ def query_gemini_api(prompt):
             }
         ]
     }
-    # Use your API key from Google Cloud
-    api_key = st.secrets["GEMINI_API_KEY"]  # Store your API key in Streamlit secrets
+    # Use your API key from Streamlit secrets
+    api_key = st.secrets["GEMINI_API_KEY"]
     response = requests.post(f"{API_URL}?key={api_key}", headers=headers, json=payload)
     return response.json()
 
-# Query submission logic
-if submit_button:
+# Centered title with responsive styling
+st.markdown("""
+    <style>
+        @media (max-width: 600px) {
+            h1 { font-size: 70px; line-height: 1.2; }
+            h3 { font-size: 16px; line-height: 1.1; }
+        }
+        @media (min-width: 601px) {
+            h1 { font-size: 36px; line-height: 1; }
+            h3 { font-size: 24px; line-height: 0; }
+        }
+        .stButton > button { padding: 10px 20px; }
+        .stFileUploader { margin-top: 20px; margin-bottom: 20px; }
+    </style>
+    <h1 style='text-align: center; margin: 0;'>🦙💬 G10</h1>
+    <h3 style='text-align: center; margin: 0;'>Face Detection Apps</h3>
+""", unsafe_allow_html=True)
+
+# Initialize the documents list
+if 'documents' not in st.session_state:
+    st.session_state.documents = []
+
+# Create a form for input and submission
+with st.form(key='query_form', clear_on_submit=True):
+    user_query = st.text_input("Please ask something:", placeholder="Enter your query here...", max_chars=200)
+    submit_button = st.form_submit_button("Submit")  # This button is defined here
+
+# Add a file uploader for document and image
+uploaded_file = st.file_uploader("Upload a document (text file) or image (jpg/png)", type=["txt", "jpg", "jpeg", "png"], label_visibility="collapsed")
+
+# Process the uploaded file (the rest of your existing logic...)
+
+# Query submission logic (this should be outside of the form block)
+if submit_button:  # Now this will work correctly as submit_button is defined
     if user_query:
         with st.spinner("Analyzing and generating response..."):
             if st.session_state.documents:
