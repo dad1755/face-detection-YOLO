@@ -32,7 +32,7 @@ jobs:
           GENAI_API_KEY: ${{ secrets.GENAI_API_KEY }}
         run: |
           echo "Using the API Key"
-          python -c "
+          python -c
             import os
             print('Current Python Path:', os.sys.path)  # Print the Python path to help diagnose
             try:
