@@ -1,8 +1,6 @@
-opencv-python
-numpy
 streamlit
-pillow
+Pillow
 ultralytics
 supervision
 huggingface_hub
-
+opencv-python-headless
