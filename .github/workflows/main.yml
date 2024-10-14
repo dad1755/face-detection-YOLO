@@ -1,36 +1,49 @@
-steps:
-  - name: Checkout code
-    uses: actions/checkout@v2
+name: Python CI
 
-  - name: Set up Python
-    uses: actions/setup-python@v4
-    with:
-      python-version: '3.8'  # Specify your desired Python version
+on: 
+  push:
+    branches:
+      - main
 
-  - name: Install dependencies
-    run: |
-      echo "Upgrading pip"
-      python -m pip install --upgrade pip
-      echo "Installing genai"
-      pip install genai  # Ensure genai is installed
-      echo "Installed packages:"
-      pip list  # List installed packages to confirm
-  - name: Test API Key and import
-    env:
-      GENAI_API_KEY: ${{ secrets.GENAI_API_KEY }}
-    run: |
-      echo "Using the API Key"
-      python -c
-        import os
-        print('Current Python Path:', os.sys.path)  # Print the Python path to help diagnose
-        try:
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v2
+
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.8'  # Specify your desired Python version
+
+      - name: Install dependencies
+        run: |
+          echo "Upgrading pip"
+          python -m pip install --upgrade pip
+          echo "Installing genai"
+          pip install genai  # Ensure genai is installed
+          echo "Installed packages:"
+          pip list  # List installed packages to confirm
+
+      - name: Test API Key and import
+        env:
+          GENAI_API_KEY: ${{ secrets.GENAI_API_KEY }}
+        run: |
+          echo "Using the API Key"
+          python -c 
+          import os
+          print('Current Python Path:', os.sys.path)  # Print the Python path to help diagnose
+          try:
           import genai  # Attempt to import genai
-          print('Successfully imported genai.')
-        except ImportError as e:
-          print('ImportError:', e)
-        # Check if the API Key is set
-        api_key = os.getenv('GENAI_API_KEY')
-        if api_key is None:
-          print('API key not found. Please check your GitHub Secrets.')
-        else:
-          print('API Key retrieved successfully:', api_key)
+            print('Successfully imported genai.')
+          except ImportError as e:
+            print('ImportError:', e)
+          # Check if the API Key is set
+            api_key = os.getenv('GENAI_API_KEY')
+            if api_key is None:
+              print('API key not found. Please check your GitHub Secrets.')
+            else:
+              print('API Key retrieved successfully:', api_key)
+
