@@ -74,7 +74,7 @@ if 'model' not in st.session_state:
     st.session_state.model = load_model()
 
 # Load the Hugging Face token from Streamlit secrets
-huggingface_token = st.secrets["huggingface","token"]
+huggingface_token = st.secrets["huggingface"]
 
 # Load the LLaMA model
 def load_llama_model():
