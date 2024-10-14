@@ -2,10 +2,9 @@ import streamlit as st
 import random
 import subprocess
 import shlex
-import numpy as np
 from PIL import Image, ImageDraw
 from huggingface_hub import hf_hub_download, login
-from transformers import AutoProcessor, AutoModelForPreTraining  # Import necessary libraries
+from transformers import AutoProcessor, AutoModelForPreTraining
 from ultralytics import YOLO
 from supervision import Detections
 
@@ -13,9 +12,12 @@ from supervision import Detections
 REPLICATE_API_TOKEN = st.secrets["REPLICATE_API_TOKEN"]
 login(token=REPLICATE_API_TOKEN)
 
-# Load the model and processor
-processor = AutoProcessor.from_pretrained("meta-1lama/Llama-3.2-118-Vision-Instruct")
-model = AutoModelForPreTraining.from_pretrained("meta-1lama/Llama-3.2-118-Vision-Instruct")
+# Load the model and processor with the token for private access
+processor = AutoProcessor.from_pretrained("meta-1lama/Llama-3.2-118-Vision-Instruct", use_auth_token=REPLICATE_API_TOKEN)
+model = AutoModelForPreTraining.from_pretrained("meta-1lama/Llama-3.2-118-Vision-Instruct", use_auth_token=REPLICATE_API_TOKEN)
+
+# The rest of your Streamlit app code...
+
 
 # A simple document retrieval function
 def retrieve_documents(query, documents):
