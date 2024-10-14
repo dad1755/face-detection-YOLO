@@ -105,7 +105,7 @@ def generate_response(query):
 
 # Create a form for input and submission
 with st.form(key='query_form', clear_on_submit=True):
-    user_query = st.text_input("Please ask something:", placeholder="Enter your query here...", max_chars=10000)
+    user_query = st.text_input("Please ask something:", placeholder="Enter your query here...", max_chars=200)
     submit_button = st.form_submit_button("Submit")
 
 # Add a file uploader for document and image
