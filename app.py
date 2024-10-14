@@ -76,7 +76,7 @@ if uploaded_file is not None:
         
         # Analyze document
         if st.button("Analyze Document"):
-            analysis_result = analyze_document(content)
+            analysis_result = content  # For now, simply display the content
             st.write("Analysis Result: Here is the content of the uploaded document:")
             st.write(analysis_result)
     
@@ -112,10 +112,22 @@ if submit_button:
             headers = {"Authorization": f"Bearer {REPLICATE_API_TOKEN}"}
 
             # Make the request
-            response = requests.post(API_URL, headers=headers, json={"inputs": user_query})
+            payload = {
+                "inputs": user_query,
+            }
+            response = requests.post(API_URL, headers=headers, json=payload)
+
+            # Handle the response
             if response.status_code == 200:
                 result = response.json()
-                st.write(result.get("generated_text", "No output returned from the model."))
+                generated_text = result.get("generated_text", None)
+                
+                # Check if the response contains the expected output
+                if generated_text:
+                    st.write("Model Response:")
+                    st.write(generated_text)
+                else:
+                    st.warning("No output returned from the model.")
             else:
                 st.error(f"Error: {response.status_code} - {response.text}")
 
