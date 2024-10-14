@@ -1,4 +1,3 @@
-import os
 import streamlit as st
 import random
 import subprocess
@@ -9,11 +8,7 @@ from huggingface_hub import hf_hub_download
 from ultralytics import YOLO
 from supervision import Detections
 import torch
-from torchvision import transforms
 from transformers import AutoTokenizer, AutoModelForCausalLM
-
-# Set your Hugging Face token
-os.environ["HUGGINGFACEHUB_API_TOKEN"] = "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"
 
 # A simple document retrieval function
 def retrieve_documents(query, documents):
@@ -39,56 +34,11 @@ def load_model():
     model = YOLO(model_path)
     return model
 
-# Function to prepare the image for YOLO
-def prepare_image(image):
-    transform = transforms.Compose([
-        transforms.Resize((640, 640)),  # Resize image to fit the model's expected input size
-        transforms.ToTensor(),           # Convert the image to a tensor
-    ])
-    return transform(image).unsqueeze(0)  # Add batch dimension
-
 # Inference function for face detection
 def detect_faces(image, model):
-    try:
-        prepared_image = prepare_image(image)  # Prepare the image for YOLO
-        output = model(prepared_image)          # Pass the prepared image to the model
-        
-        # Debugging: Log the output
-        st.write("Model output:", output)
-
-        # Check if output has the expected format
-        if len(output) > 0 and hasattr(output[0], 'boxes'):
-            results = output[0].boxes.xyxy  # Access bounding box coordinates from the output
-            return results
-        else:
-            st.error("The model output is not in the expected format.")
-            return None
-            
-    except Exception as e:
-        st.error(f"An error occurred during face detection: {e}")
-        return None
-
-# Inside the image upload handling block, modify this section:
-# Handle image file upload
-elif file_type in ["image/jpeg", "image/png"]:
-    image = Image.open(uploaded_file)
-
-    # Add a face detection button
-    if st.button("Face Detection"):
-        detected_faces = detect_faces(image, st.session_state.model)
-
-        # If detected_faces is None, an error has occurred
-        if detected_faces is not None:
-            # Draw bounding boxes on the image only if boxes are detected
-            if detected_faces is not None and len(detected_faces) > 0:
-                # Convert to numpy array for drawing
-                boxes = detected_faces.numpy()  # Convert to NumPy array if needed
-                image_with_boxes = draw_bounding_boxes(image.copy(), boxes)
-                st.image(image_with_boxes, caption='Detected Faces', channels="RGB")
-                st.write(f"Number of faces detected: {len(boxes)}")
-            else:
-                st.warning("No faces detected. Please try a different image.")
-
+    output = model(image)
+    results = Detections.from_ultralytics(output[0])
+    return results
 
 # Draw bounding boxes on the image
 def draw_bounding_boxes(image, boxes):
@@ -113,7 +63,7 @@ st.markdown("""
         .stFileUploader { margin-top: 20px; margin-bottom: 20px; }
     </style>
     <h1 style='text-align: center; margin: 0;'>G10</h1>
-    <h3 style='text-align: center; margin: 0;'>Face Detection App</h3>
+    <h3 style='text-align: center; margin: 0;'>Face Detection Apps</h3>
 """, unsafe_allow_html=True)
 
 # Initialize the documents list
@@ -126,12 +76,8 @@ if 'model' not in st.session_state:
 
 # Load Hugging Face model and tokenizer only once
 if 'hf_model' not in st.session_state:
-    try:
-        # Use GPT-2 as a fallback
-        st.session_state.tokenizer = AutoTokenizer.from_pretrained("gpt2")
-        st.session_state.model = AutoModelForCausalLM.from_pretrained("gpt2")
-    except Exception as e:
-        st.error(f"Error loading Hugging Face model: {e}")
+    st.session_state.tokenizer = AutoTokenizer.from_pretrained("meta-llama/Llama-3.2-1B")
+    st.session_state.model = AutoModelForCausalLM.from_pretrained("meta-llama/Llama-3.2-1B")
 
 # Function to generate a response using the Hugging Face model
 def generate_response(query):
