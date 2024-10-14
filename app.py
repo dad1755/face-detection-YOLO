@@ -8,7 +8,7 @@ from supervision import Detections
 import google.generativeai as genai
 import os
 # Load the API key from the environment variable
-api2_key = os.getenv('GENAI_API_KEY')
+api2_key = os.getenv(GENAI_API_KEY)
 # A simple document retrieval function
 def retrieve_documents(query, documents):
     return random.choice(documents) if documents else "No documents available for retrieval."
