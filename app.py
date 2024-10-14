@@ -7,8 +7,7 @@ from ultralytics import YOLO
 from supervision import Detections
 import google.generativeai as genai
 import os
-# Load the API key from the environment variable
-api2_key = os.getenv(GENAI_API_KEY)
+
 # A simple document retrieval function
 def retrieve_documents(query, documents):
     return random.choice(documents) if documents else "No documents available for retrieval."
@@ -109,7 +108,7 @@ if submit_button:
                 st.write(retrieved_document)
 
             # Prepare to use the Gemini API
-            genai.configure(api_key=api2_key)
+            genai.configure(api_key="AIzaSyCavpX0T4CwaLr6ur4MbCXIyYgzvJH5zNQ")
             model = genai.GenerativeModel("gemini-1.5-flash")
 
             # Generate content using the Gemini model
