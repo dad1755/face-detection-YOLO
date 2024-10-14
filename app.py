@@ -4,7 +4,7 @@ import subprocess
 import shlex
 import requests
 import torch
-from PIL import Image, ImageDraw
+from PIL import Image
 from transformers import MllamaForConditionalGeneration, AutoProcessor
 from huggingface_hub import login
 from ultralytics import YOLO
@@ -16,12 +16,22 @@ login(token=REPLICATE_API_TOKEN)
 
 # Load the model and processor with the token for private access
 model_id = "meta-llama/Llama-3.2-11B-Vision-Instruct"
+
+# Ensure you have the accelerate library installed
+# pip install 'accelerate>=0.26.0'
+
 model = MllamaForConditionalGeneration.from_pretrained(
     model_id,
     torch_dtype=torch.bfloat16,
     device_map="auto",
 )
 processor = AutoProcessor.from_pretrained(model_id)
+
+# Your existing Streamlit code continues...
+
+
+# Your existing Streamlit code continues...
+
 
 # Initialize YOLO model
 def load_model():
