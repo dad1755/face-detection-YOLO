@@ -7,6 +7,8 @@ from PIL import Image, ImageDraw
 from huggingface_hub import hf_hub_download
 from ultralytics import YOLO
 from supervision import Detections
+import torch
+from transformers import AutoTokenizer, AutoModelForCausalLM
 
 # A simple document retrieval function
 def retrieve_documents(query, documents):
@@ -72,6 +74,27 @@ if 'documents' not in st.session_state:
 if 'model' not in st.session_state:
     st.session_state.model = load_model()
 
+# Load Hugging Face model and tokenizer only once
+if 'hf_model' not in st.session_state:
+    st.session_state.tokenizer = AutoTokenizer.from_pretrained("meta-llama/Llama-3.2-1B")
+    st.session_state.model = AutoModelForCausalLM.from_pretrained("meta-llama/Llama-3.2-1B")
+
+# Function to generate a response using the Hugging Face model
+def generate_response(query):
+    tokenizer = st.session_state.tokenizer
+    model = st.session_state.model
+
+    # Tokenize the input query
+    inputs = tokenizer(query, return_tensors="pt")
+
+    # Generate response using the model
+    with torch.no_grad():
+        outputs = model.generate(inputs["input_ids"], max_length=200)
+
+    # Decode the generated response
+    response = tokenizer.decode(outputs[0], skip_special_tokens=True)
+    return response
+
 # Create a form for input and submission
 with st.form(key='query_form', clear_on_submit=True):
     user_query = st.text_input("Please ask something:", placeholder="Enter your query here...", max_chars=200)
@@ -122,16 +145,9 @@ if submit_button:
                 st.write("Retrieved Document: Here are the extracted details:")
                 st.write(retrieved_document)
 
-            # Modify the command to focus on the user query
-            command = f"ollama run llama3.2 '{shlex.quote(user_query)}'"
-            stdout, stderr, returncode = run_command(command)
-
-            # Check for errors
-            if returncode != 0:
-                st.error(f"Error: {stderr}")
-            else:
-                result = stdout.strip()
-                st.write(result)
+            # Generate a response using the Hugging Face model
+            response = generate_response(user_query)
+            st.write(response)
 
         # Clear the documents after submission
         st.session_state.documents.clear()
