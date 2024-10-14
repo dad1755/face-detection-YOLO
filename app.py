@@ -128,7 +128,7 @@ if submit_button:
                     st.write("Model Response:")
                     st.write(generated_text)
                 else:
-                    st.warning("Unexpected response format.")
+                    st.warning("Unexpected response format. Ensure the API returns a valid JSON.")
             else:
                 st.error(f"Error: {response.status_code} - {response.text}")
 
@@ -136,6 +136,7 @@ if submit_button:
         st.session_state.documents.clear()
     else:
         st.error("Please enter a query before submitting.")
+
 
 # Display message if no documents are available
 if not st.session_state.documents:
