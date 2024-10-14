@@ -13,9 +13,22 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v2
 
-      - name: Configure Gemini API
+      - name: Configure and call Gemini API
         env:
-          GENAI_API_KEY: ${{ secrets.GENAI_API_KEY }}  # Pass the secret as an environment variable
+          GENAI_API_KEY: ${{ secrets.GENAI_API_KEY }}  # Use the secret as an environment variable
         run: |
-          echo "Configuring Gemini API..."
-          python -c "import os; import genai; genai.configure(api_key=os.getenv('GENAI_API_KEY'))"
+          echo "Configuring and calling Gemini API..."
+          python -c "
+import os
+import genai
+
+# Configure the API
+genai.configure(api_key=os.getenv('GENAI_API_KEY'))
+
+# Call the API with the specified model
+model = genai.GenerativeModel('gemini-1.5-flash')
+
+# Example API call (modify as needed)
+response = model.generate('Who is Google Gemini')  # Replace with actual prompt
+print(response)
+"
