@@ -7,11 +7,25 @@ from PIL import Image, ImageDraw
 from huggingface_hub import hf_hub_download
 from ultralytics import YOLO
 from supervision import Detections
-from transformers import pipeline  # Import pipeline for text generation
+from transformers import AutoTokenizer, AutoModelForCausalLM
 
 # A simple document retrieval function
 def retrieve_documents(query, documents):
     return random.choice(documents) if documents else "No documents available for retrieval."
+
+# Define a function to run the command synchronously
+def run_command(command):
+    process = subprocess.run(
+        shlex.split(command),
+        stdout=subprocess.PIPE,
+        stderr=subprocess.PIPE,
+        text=True
+    )
+    return process.stdout, process.stderr, process.returncode
+
+# Define a function to analyze the document
+def analyze_document(document):
+    return document  # Modify as needed to extract or analyze specific details
 
 # Load the YOLO model from Hugging Face
 def load_model():
@@ -59,9 +73,22 @@ if 'documents' not in st.session_state:
 if 'model' not in st.session_state:
     st.session_state.model = load_model()
 
-# Load the Hugging Face text generation model
-if 'text_gen_model' not in st.session_state:
-    st.session_state.text_gen_model = pipeline("text-generation", model="meta-llama/Llama-3.2-1B")
+# Load the Hugging Face token from Streamlit secrets
+huggingface_token = st.secrets["huggingface"]["token"]
+
+# Load the LLaMA model
+def load_llama_model():
+    try:
+        tokenizer = AutoTokenizer.from_pretrained("meta-llama/Llama-3.2-1B", use_auth_token=huggingface_token)
+        model = AutoModelForCausalLM.from_pretrained("meta-llama/Llama-3.2-1B", use_auth_token=huggingface_token)
+        return tokenizer, model
+    except OSError as e:
+        st.error(f"Error loading model: {e}")
+        return None, None
+
+# Load the LLaMA model if not already loaded
+if 'llama_tokenizer' not in st.session_state:
+    st.session_state.llama_tokenizer, st.session_state.llama_model = load_llama_model()
 
 # Create a form for input and submission
 with st.form(key='query_form', clear_on_submit=True):
@@ -79,6 +106,11 @@ if uploaded_file is not None:
         content = uploaded_file.read().decode("utf-8")
         st.session_state.documents.append(content)
         st.success("Document uploaded successfully!")
+        # Analyze document
+        if st.button("Analyze Document"):
+            analysis_result = analyze_document(content)
+            st.write("Analysis Result: Here is the content of the uploaded document:")
+            st.write(analysis_result)
     # Handle image file upload
     elif file_type in ["image/jpeg", "image/png"]:
         image = Image.open(uploaded_file)
@@ -97,16 +129,20 @@ if uploaded_file is not None:
 # Query submission logic
 if submit_button:
     if user_query:
-        with st.spinner("Generating response..."):
+        with st.spinner("Analyzing and generating response..."):
             if st.session_state.documents:
                 retrieved_document = retrieve_documents(user_query, st.session_state.documents)
                 st.write("Retrieved Document: Here are the extracted details:")
                 st.write(retrieved_document)
-
-            # Use Hugging Face model for text generation
-            result = st.session_state.text_gen_model(user_query, max_length=100, num_return_sequences=1)[0]['generated_text']
-            st.write(result)
-
+                # Modify the command to focus on the user query
+                command = f"ollama run llama3.2 '{shlex.quote(user_query)}'"
+                stdout, stderr, returncode = run_command(command)
+                # Check for errors
+                if returncode != 0:
+                    st.error(f"Error: {stderr}")
+                else:
+                    result = stdout.strip()
+                    st.write(result)
         # Clear the documents after submission
         st.session_state.documents.clear()
     else:
