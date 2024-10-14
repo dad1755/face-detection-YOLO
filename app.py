@@ -108,7 +108,7 @@ if submit_button:
                 st.write(retrieved_document)
 
             # Prepare to use the Gemini API
-            genai.configure(api_key=st.secrets["GEMINI_API_KEY"])
+            genai.configure(api_key="AIzaSyCavpX0T4CwaLr6ur4MbCXIyYgzvJH5zNQ")
             model = genai.GenerativeModel("gemini-1.5-flash")
 
             # Generate content using the Gemini model
