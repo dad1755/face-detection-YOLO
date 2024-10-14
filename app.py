@@ -7,6 +7,10 @@ from ultralytics import YOLO
 from supervision import Detections
 import google.generativeai as genai
 import os
+from dotenv import load_dotenv
+
+# Load environment variables from .env file
+load_dotenv()
 
 # A simple document retrieval function
 def retrieve_documents(query, documents):
@@ -74,13 +78,13 @@ if uploaded_file is not None:
         content = uploaded_file.read().decode("utf-8")
         st.session_state.documents.append(content)
         st.success("Document uploaded successfully!")
-        
+
         # Analyze document
         if st.button("Analyze Document"):
             analysis_result = content  # For now, simply display the content
             st.write("Analysis Result: Here is the content of the uploaded document:")
             st.write(analysis_result)
-    
+
     # Handle image file upload
     elif file_type in ["image/jpeg", "image/png"]:
         image = Image.open(uploaded_file)
@@ -108,19 +112,23 @@ if submit_button:
                 st.write(retrieved_document)
 
             # Prepare to use the Gemini API
-            genai.configure(api_key="AIzaSyCavpX0T4CwaLr6ur4MbCXIyYgzvJH5zNQ")
-            model = genai.GenerativeModel("gemini-1.5-flash")
+            api_key = os.getenv("GOOGLE_API_KEY")
+            if api_key:
+                genai.configure(api_key=api_key)
+                model = genai.GenerativeModel("gemini-1.5-flash")
 
-            # Generate content using the Gemini model
-            response = model.generate_content(user_query)
+                # Generate content using the Gemini model
+                response = model.generate_content(user_query)
 
-            # Handle the response
-            if response:
-                generated_text = response.text
-                st.write("Model Response:")
-                st.write(generated_text)  # Display the generated text cleanly
+                # Handle the response
+                if response:
+                    generated_text = response.text
+                    st.write("Model Response:")
+                    st.write(generated_text)  # Display the generated text cleanly
+                else:
+                    st.warning("No response received from the Gemini model.")
             else:
-                st.warning("No response received from the Gemini model.")
+                st.error("Google API key is missing. Check your .env file.")
 
         # Clear the documents after submission
         st.session_state.documents.clear()
