@@ -1,7 +1,6 @@
 import streamlit as st
 import random
-import subprocess
-import shlex
+import requests
 import numpy as np
 from PIL import Image, ImageDraw
 from huggingface_hub import hf_hub_download
@@ -11,20 +10,6 @@ from supervision import Detections
 # A simple document retrieval function
 def retrieve_documents(query, documents):
     return random.choice(documents) if documents else "No documents available for retrieval."
-
-# Define a function to run the command synchronously
-def run_command(command):
-    process = subprocess.run(
-        shlex.split(command),
-        stdout=subprocess.PIPE,
-        stderr=subprocess.PIPE,
-        text=True
-    )
-    return process.stdout, process.stderr, process.returncode
-
-# Define a function to analyze the document
-def analyze_document(document):
-    return document  # Modify as needed to extract or analyze specific details
 
 # Load the YOLO model from Hugging Face
 def load_model():
@@ -120,17 +105,19 @@ if submit_button:
                 retrieved_document = retrieve_documents(user_query, st.session_state.documents)
                 st.write("Retrieved Document: Here are the extracted details:")
                 st.write(retrieved_document)
-                
-                # Modify the command to focus on the user query
-                command = f"ollama run llama3.2 '{shlex.quote(user_query)}'"
-                stdout, stderr, returncode = run_command(command)
-                
-                # Check for errors
-                if returncode != 0:
-                    st.error(f"Error: {stderr}")
-                else:
-                    result = stdout.strip()
-                    st.write(result)
+
+            # Prepare the API request to Hugging Face
+            API_URL = "https://api-inference.huggingface.co/models/meta-llama/Llama-3.2-1B"
+            REPLICATE_API_TOKEN = st.secrets["REPLICATE_API_TOKEN"]  # Load your API token from secrets
+            headers = {"Authorization": f"Bearer {REPLICATE_API_TOKEN}"}
+
+            # Make the request
+            response = requests.post(API_URL, headers=headers, json={"inputs": user_query})
+            if response.status_code == 200:
+                result = response.json()
+                st.write(result.get("generated_text", "No output returned from the model."))
+            else:
+                st.error(f"Error: {response.status_code} - {response.text}")
 
         # Clear the documents after submission
         st.session_state.documents.clear()
