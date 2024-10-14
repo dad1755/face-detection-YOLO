@@ -33,18 +33,17 @@ jobs:
         run: |
           echo "Using the API Key"
           python -c "
-import os
-print('Current Python Path:', os.sys.path)  # Print the Python path to help diagnose
-try:
-    import genai  # Attempt to import genai
-    print('Successfully imported genai.')
-except ImportError as e:
-    print('ImportError:', e)
+            import os
+            print('Current Python Path:', os.sys.path)  # Print the Python path to help diagnose
+            try:
+              import genai  # Attempt to import genai
+              print('Successfully imported genai.')
+            except ImportError as e:
+              print('ImportError:', e)
 
-# Check if the API Key is set
-api_key = os.getenv('GENAI_API_KEY')
-if api_key is None:
-    print('API key not found. Please check your GitHub Secrets.')
-else:
-    print('API Key retrieved successfully:', api_key)
-"
+            # Check if the API Key is set
+            api_key = os.getenv('GENAI_API_KEY')
+            if api_key is None:
+              print('API key not found. Please check your GitHub Secrets.')
+            else:
+              print('API Key retrieved successfully:', api_key)
