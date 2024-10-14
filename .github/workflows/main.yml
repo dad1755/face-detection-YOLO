@@ -13,15 +13,6 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v2
 
-      - name: Set up Python
-        uses: actions/setup-python@v2
-        with:
-          python-version: '3.x'  # Specify your desired Python version
-
-      - name: Install dependencies
-        run: |
-          pip install -r requirements.txt
-
       - name: Configure Gemini API
         env:
           GENAI_API_KEY: ${{ secrets.GENAI_API_KEY }}  # Pass the secret as an environment variable
