@@ -1,7 +1,6 @@
 import streamlit as st
 import random
 import requests
-import numpy as np
 from PIL import Image, ImageDraw
 from huggingface_hub import hf_hub_download
 from ultralytics import YOLO
@@ -120,14 +119,16 @@ if submit_button:
             # Handle the response
             if response.status_code == 200:
                 result = response.json()
-                generated_text = result.get("generated_text", None)
-                
-                # Check if the response contains the expected output
-                if generated_text:
+                # Log the result for debugging
+                st.write("API Response:", result)
+
+                # Check for the expected output key
+                if "generated_text" in result:
+                    generated_text = result["generated_text"]
                     st.write("Model Response:")
                     st.write(generated_text)
                 else:
-                    st.warning("No output returned from the model.")
+                    st.warning("No 'generated_text' key found in the response.")
             else:
                 st.error(f"Error: {response.status_code} - {response.text}")
 
