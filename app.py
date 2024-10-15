@@ -5,10 +5,8 @@ from PIL import Image, ImageDraw
 from huggingface_hub import hf_hub_download
 from ultralytics import YOLO
 from supervision import Detections
-import google.generativeai as genai
-import os
 
-# Access the Google API key using st.secrets
+# Load the Google API key from secrets
 api_key = st.secrets["general"]["GOOGLE_API_KEY"]
 print(f"Loaded API key: {api_key}")  # Debugging line to verify if the API key is loaded
 
@@ -39,13 +37,23 @@ def draw_bounding_boxes(image, boxes):
 # Centered title with responsive styling
 st.markdown("""
     <style>
-        @media (max-width: 800px) {
+        @media (max-width: 600px) {
             h1 { font-size: 70px; line-height: 1.2; }
             h3 { font-size: 16px; line-height: 1.1; }
+            .stTextInput > div > input {
+                font-size: 16px !important;
+                height: 48px !important;
+                width: 100% !important;
+            }
         }
         @media (min-width: 601px) {
             h1 { font-size: 36px; line-height: 1; }
             h3 { font-size: 24px; line-height: 0; }
+            .stTextInput > div > input {
+                font-size: 20px !important;
+                height: 56px !important;
+                width: 80% !important;
+            }
         }
         .stButton > button { padding: 10px 20px; }
         .stFileUploader { margin-top: 20px; margin-bottom: 20px; }
