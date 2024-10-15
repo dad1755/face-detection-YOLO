@@ -49,8 +49,9 @@ st.markdown("""
         }
         .stButton > button { padding: 10px 20px; }
         .stFileUploader { margin-top: 20px; margin-bottom: 20px; }
-    </style>
-    <h1 style='text-align: center; margin: 0;'>🦙💬 G10</h1>
+    </style>🎈
+    #<h1 style='text-align: center; margin: 0;'>🦙💬 G10</h1>
+    <h1 style='text-align: center; margin: 0;'>🎈💬 G10</h1>
     <h3 style='text-align: center; margin: 0;'>Face Counter Apps</h3>
 """, unsafe_allow_html=True)
 
@@ -64,7 +65,7 @@ if 'model' not in st.session_state:
 
 # Create a form for input and submission
 with st.form(key='query_form', clear_on_submit=True):
-    user_query = st.text_input("Please ask something, powered by Google Gemini:", placeholder="Enter your query here...", max_chars=200)
+    user_query = st.text_input("Please ask something, 🤗💬:", placeholder="Enter your query here...", max_chars=200)
     submit_button = st.form_submit_button("Submit")
 
 # Add a file uploader for document and image
