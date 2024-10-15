@@ -136,4 +136,4 @@ if submit_button:
 
 # Display message if no documents are available
 if not st.session_state.documents:
-    st.info("You can still ask questions even if you haven't uploaded any documents.")
+    st.info("You can still ask questions even if you haven't uploaded any image.")
