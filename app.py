@@ -7,11 +7,9 @@ from ultralytics import YOLO
 from supervision import Detections
 import google.generativeai as genai
 import os
-from dotenv import load_dotenv
 
-# Load environment variables from .env file
-load_dotenv()
-api_key = os.getenv("GOOGLE_API_KEY")
+# Access the Google API key using st.secrets
+api_key = st.secrets["general"]["GOOGLE_API_KEY"]
 print(f"Loaded API key: {api_key}")  # Debugging line to verify if the API key is loaded
 
 # A simple document retrieval function
@@ -114,9 +112,8 @@ if submit_button:
                 st.write(retrieved_document)
 
             # Prepare to use the Gemini API
-            api_key = "AIzaSyCavpX0T4CwaLr6ur4MbCXIyYgzvJH5zNQ"
             if api_key:
-                genai.configure(api_key="AIzaSyCavpX0T4CwaLr6ur4MbCXIyYgzvJH5zNQ")
+                genai.configure(api_key=api_key)
                 model = genai.GenerativeModel("gemini-1.5-flash")
 
                 # Generate content using the Gemini model
@@ -130,7 +127,7 @@ if submit_button:
                 else:
                     st.warning("No response received from the Gemini model.")
             else:
-                st.error("Google API key is missing. Check your .env file.")
+                st.error("Google API key is missing. Check your secrets file.")
 
         # Clear the documents after submission
         st.session_state.documents.clear()
