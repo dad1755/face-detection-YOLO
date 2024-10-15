@@ -11,8 +11,8 @@ from dotenv import load_dotenv
 
 # Load environment variables from .env file
 load_dotenv()
-api2_key = os.getenv("GOOGLE_API_KEY")
-print(f"Loaded API key: {api2_key}")  # Debugging line
+api_key = os.getenv("GOOGLE_API_KEY")
+print(f"Loaded API key: {api_key}")  # Debugging line
 
 
 # A simple document retrieval function
