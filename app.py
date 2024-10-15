@@ -50,8 +50,8 @@ st.markdown("""
         .stButton > button { padding: 10px 20px; }
         .stFileUploader { margin-top: 20px; margin-bottom: 20px; }
     </style>
-   
-    <h1 style='text-align: center; margin: 0;'>🎈 G10</h1>
+    <h1 style='text-align: center; margin: 0;'>🎈</h1>
+    <h1 style='text-align: center; margin: 0;'>G10</h1>
     <h3 style='text-align: center; margin: 0;'>Face Counter Apps</h3>
 """, unsafe_allow_html=True)
 
