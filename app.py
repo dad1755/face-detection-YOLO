@@ -39,7 +39,7 @@ def draw_bounding_boxes(image, boxes):
 # Centered title with responsive styling
 st.markdown("""
     <style>
-        @media (max-width: 600px) {
+        @media (max-width: 800px) {
             h1 { font-size: 70px; line-height: 1.2; }
             h3 { font-size: 16px; line-height: 1.1; }
         }
