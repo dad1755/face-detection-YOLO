@@ -92,15 +92,21 @@ if uploaded_file is not None:
 
             # Automatically detect faces after uploading an image
             detected_faces = detect_faces(image, st.session_state.model)
+    
+            # Extract the bounding box coordinates
             boxes = detected_faces.xyxy
 
-            # Draw bounding boxes on the image only if boxes are detected
+            # Check if any boxes (faces) are detected
         if boxes is not None and len(boxes) > 0:
+            # Draw bounding boxes on the image
             image_with_boxes = draw_bounding_boxes(image.copy(), boxes)
             st.image(image_with_boxes, caption='Detected Faces', channels="RGB")
+        
+            # Display the number of detected faces
             st.write(f"Number of faces detected: {len(boxes)}")
         else:
             st.warning("No faces detected. Please try a different image.")
+
 
 
 # Query submission logic
