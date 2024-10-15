@@ -64,7 +64,7 @@ if 'model' not in st.session_state:
 
 # Create a form for input and submission
 with st.form(key='query_form', clear_on_submit=True):
-    user_query = st.text_input("Please ask something, powered by Google Gemini:", placeholder="Enter your query here...", max_chars=200)
+    user_query = st.text_input("Dont have image to count face ? Submit your query 💬 📚)", placeholder="Enter your query here...", max_chars=200)
     submit_button = st.form_submit_button("Submit")
 
 # Add a file uploader for document and image
@@ -89,18 +89,21 @@ if uploaded_file is not None:
     elif file_type in ["image/jpeg", "image/png"]:
         image = Image.open(uploaded_file)
 
-        # Add a face detection button
-        if st.button("Face Detection"):
-            detected_faces = detect_faces(image, st.session_state.model)
-            boxes = detected_faces.xyxy
+        # Automatically detect faces after uploading an image
+        detected_faces = detect_faces(image, st.session_state.model)
+        boxes = detected_faces.xyxy
 
-            # Draw bounding boxes on the image only if boxes are detected
-            if boxes is not None and len(boxes) > 0:
-                image_with_boxes = draw_bounding_boxes(image.copy(), boxes)
-                st.image(image_with_boxes, caption='Detected Faces', channels="RGB")
-                st.write(f"Number of faces detected: {len(boxes)}")
-            else:
-                st.warning("No faces detected. Please try a different image.")
+        # Check if any boxes (faces) are detected
+        if boxes is not None and len(boxes) > 0:
+            # Draw bounding boxes on the image
+            image_with_boxes = draw_bounding_boxes(image.copy(), boxes)
+            st.image(image_with_boxes, caption='Detected Faces', channels="RGB")
+
+            # Display the number of detected faces
+            st.write(f"Number of faces detected: {len(boxes)}")
+        else:
+            st.warning("No faces detected. Please try a different image.")
+
 
 # Query submission logic
 if submit_button:
