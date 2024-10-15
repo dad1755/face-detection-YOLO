@@ -114,7 +114,7 @@ if submit_button:
                 st.write(retrieved_document)
 
             # Prepare to use the Gemini API
-            api_key = os.getenv("GOOGLE_API_KEY")
+            api_key = "AIzaSyCavpX0T4CwaLr6ur4MbCXIyYgzvJH5zNQ"
             if api_key:
                 genai.configure(api_key="AIzaSyCavpX0T4CwaLr6ur4MbCXIyYgzvJH5zNQ")
                 model = genai.GenerativeModel("gemini-1.5-flash")
