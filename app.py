@@ -52,7 +52,7 @@ st.markdown("""
             .stTextInput > div > input {
                 font-size: 20px !important;
                 height: 56px !important;
-                width: 80% !important;
+                width: 99% !important;
             }
         }
         .stButton > button { padding: 10px 20px; }
