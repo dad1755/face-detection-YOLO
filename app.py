@@ -116,7 +116,7 @@ if submit_button:
             # Prepare to use the Gemini API
             api_key = os.getenv("GOOGLE_API_KEY")
             if api_key:
-                genai.configure(api_key=api_key)
+                genai.configure(api_key="AIzaSyCavpX0T4CwaLr6ur4MbCXIyYgzvJH5zNQ")
                 model = genai.GenerativeModel("gemini-1.5-flash")
 
                 # Generate content using the Gemini model
