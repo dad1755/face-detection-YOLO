@@ -50,12 +50,14 @@ st.markdown("""
         .stButton > button { padding: 10px 20px; }
         .stFileUploader { margin-top: 20px; margin-bottom: 20px; }
     </style>
-  
-    <h1 style='text-align: center; margin: 0;'>🎈💬 G10</h1>
+    <h1 style='text-align: center; margin: 0;'>🦙💬 G10</h1>
     <h3 style='text-align: center; margin: 0;'>Face Counter Apps</h3>
 """, unsafe_allow_html=True)
 
-# Initialize the documents list  #🦙💬 G10
+# Initialize the chat history and documents list
+if 'chat_history' not in st.session_state:
+    st.session_state.chat_history = []
+
 if 'documents' not in st.session_state:
     st.session_state.documents = []
 
@@ -63,10 +65,45 @@ if 'documents' not in st.session_state:
 if 'model' not in st.session_state:
     st.session_state.model = load_model()
 
-# Create a form for input and submission
-with st.form(key='query_form', clear_on_submit=True):
-    user_query = st.text_input("Please ask something, 🤗💬:", placeholder="Enter your query here...", max_chars=200)
-    submit_button = st.form_submit_button("Submit")
+# Create a chatbox for user input
+user_query = st.text_area("Chat with the model:", placeholder="Enter your query here...", max_chars=200, height=100)
+
+# Chat submission button
+if st.button("Send"):
+    if user_query:
+        with st.spinner("Analyzing and generating response..."):
+            # Append the user's message to the chat history
+            st.session_state.chat_history.append(f"You: {user_query}")
+
+            # Retrieve documents if available
+            if st.session_state.documents:
+                retrieved_document = retrieve_documents(user_query, st.session_state.documents)
+                st.session_state.chat_history.append(f"Retrieved Document: {retrieved_document}")
+
+            # Prepare to use the Gemini API
+            if api_key:
+                genai.configure(api_key=api_key)
+                model = genai.GenerativeModel("gemini-1.5-flash")
+
+                # Generate content using the Gemini model
+                response = model.generate_content(user_query)
+
+                # Handle the response
+                if response:
+                    generated_text = response.text
+                    st.session_state.chat_history.append(f"Model: {generated_text}")
+                else:
+                    st.session_state.chat_history.append("Model: No response received from the Gemini model.")
+            else:
+                st.error("Google API key is missing. Check your secrets file.")
+
+            # Clear the user query after submission
+            user_query = ""
+
+# Display the chat history
+st.markdown("### Conversation History")
+for message in st.session_state.chat_history:
+    st.write(message)
 
 # Add a file uploader for document and image
 uploaded_file = st.file_uploader("Upload a document (text file) or image (jpg/png)", type=["jpg", "jpeg", "png"], label_visibility="collapsed")
@@ -74,6 +111,7 @@ uploaded_file = st.file_uploader("Upload a document (text file) or image (jpg/pn
 # Process the uploaded file
 if uploaded_file is not None:
     file_type = uploaded_file.type
+
     # Handle text document upload
     if file_type == "text/plain":
         content = uploaded_file.read().decode("utf-8")
@@ -105,40 +143,6 @@ if uploaded_file is not None:
         else:
             st.warning("No faces detected. Please try a different image.")
 
-
-
-# Query submission logic
-if submit_button:
-    if user_query:
-        with st.spinner("Analyzing and generating response..."):
-            if st.session_state.documents:
-                retrieved_document = retrieve_documents(user_query, st.session_state.documents)
-                st.write("Retrieved Document: Here are the extracted details:")
-                st.write(retrieved_document)
-
-            # Prepare to use the Gemini API
-            if api_key:
-                genai.configure(api_key=api_key)
-                model = genai.GenerativeModel("gemini-1.5-flash")
-
-                # Generate content using the Gemini model
-                response = model.generate_content(user_query)
-
-                # Handle the response
-                if response:
-                    generated_text = response.text
-                    st.write("Model Response:")
-                    st.write(generated_text)  # Display the generated text cleanly
-                else:
-                    st.warning("No response received from the Gemini model.")
-            else:
-                st.error("Google API key is missing. Check your secrets file.")
-
-        # Clear the documents after submission
-        st.session_state.documents.clear()
-    else:
-        st.error("Please enter a query before submitting.")
-
 # Display message if no documents are available
 if not st.session_state.documents:
-    st.info("You can still ask questions even if you haven't uploaded any image.")
+    st.info("You can still ask questions even if you haven't uploaded any documents.")
