@@ -7,9 +7,11 @@ from ultralytics import YOLO
 from supervision import Detections
 import google.generativeai as genai
 import os
+from dotenv import load_dotenv
 
-# Access the Google API key using st.secrets
-api_key = st.secrets["general"]["GOOGLE_API_KEY"]
+# Load environment variables from .env file
+load_dotenv()
+api_key = os.getenv("GOOGLE_API_KEY")
 print(f"Loaded API key: {api_key}")  # Debugging line to verify if the API key is loaded
 
 # A simple document retrieval function
@@ -51,13 +53,10 @@ st.markdown("""
         .stFileUploader { margin-top: 20px; margin-bottom: 20px; }
     </style>
     <h1 style='text-align: center; margin: 0;'>🦙💬 G10</h1>
-    <h3 style='text-align: center; margin: 0;'>Face Counter Apps</h3>
+    <h3 style='text-align: center; margin: 0;'>Face Detection Apps</h3>
 """, unsafe_allow_html=True)
 
-# Initialize the chat history and documents list
-if 'chat_history' not in st.session_state:
-    st.session_state.chat_history = []
-
+# Initialize the documents list
 if 'documents' not in st.session_state:
     st.session_state.documents = []
 
@@ -65,45 +64,10 @@ if 'documents' not in st.session_state:
 if 'model' not in st.session_state:
     st.session_state.model = load_model()
 
-# Create a chatbox for user input
-user_query = st.text_area("Chat with the model:", placeholder="Enter your query here...", max_chars=200, height=100)
-
-# Chat submission button
-if st.button("Send"):
-    if user_query:
-        with st.spinner("Analyzing and generating response..."):
-            # Append the user's message to the chat history
-            st.session_state.chat_history.append(f"You: {user_query}")
-
-            # Retrieve documents if available
-            if st.session_state.documents:
-                retrieved_document = retrieve_documents(user_query, st.session_state.documents)
-                st.session_state.chat_history.append(f"Retrieved Document: {retrieved_document}")
-
-            # Prepare to use the Gemini API
-            if api_key:
-                genai.configure(api_key=api_key)
-                model = genai.GenerativeModel("gemini-1.5-flash")
-
-                # Generate content using the Gemini model
-                response = model.generate_content(user_query)
-
-                # Handle the response
-                if response:
-                    generated_text = response.text
-                    st.session_state.chat_history.append(f"Model: {generated_text}")
-                else:
-                    st.session_state.chat_history.append("Model: No response received from the Gemini model.")
-            else:
-                st.error("Google API key is missing. Check your secrets file.")
-
-            # Clear the user query after submission
-            user_query = ""
-
-# Display the chat history
-st.markdown("### Conversation History")
-for message in st.session_state.chat_history:
-    st.write(message)
+# Create a form for input and submission
+with st.form(key='query_form', clear_on_submit=True):
+    user_query = st.text_input("Please ask something, powered by Google Gemini:", placeholder="Enter your query here...", max_chars=200)
+    submit_button = st.form_submit_button("Submit")
 
 # Add a file uploader for document and image
 uploaded_file = st.file_uploader("Upload a document (text file) or image (jpg/png)", type=["jpg", "jpeg", "png"], label_visibility="collapsed")
@@ -111,7 +75,6 @@ uploaded_file = st.file_uploader("Upload a document (text file) or image (jpg/pn
 # Process the uploaded file
 if uploaded_file is not None:
     file_type = uploaded_file.type
-
     # Handle text document upload
     if file_type == "text/plain":
         content = uploaded_file.read().decode("utf-8")
@@ -128,20 +91,51 @@ if uploaded_file is not None:
     elif file_type in ["image/jpeg", "image/png"]:
         image = Image.open(uploaded_file)
 
-        # Automatically detect faces after uploading an image
-        detected_faces = detect_faces(image, st.session_state.model)
-        boxes = detected_faces.xyxy
+        # Add a face detection button
+        if st.button("Face Detection"):
+            detected_faces = detect_faces(image, st.session_state.model)
+            boxes = detected_faces.xyxy
 
-        # Check if any boxes (faces) are detected
-        if boxes is not None and len(boxes) > 0:
-            # Draw bounding boxes on the image
-            image_with_boxes = draw_bounding_boxes(image.copy(), boxes)
-            st.image(image_with_boxes, caption='Detected Faces', channels="RGB")
+            # Draw bounding boxes on the image only if boxes are detected
+            if boxes is not None and len(boxes) > 0:
+                image_with_boxes = draw_bounding_boxes(image.copy(), boxes)
+                st.image(image_with_boxes, caption='Detected Faces', channels="RGB")
+                st.write(f"Number of faces detected: {len(boxes)}")
+            else:
+                st.warning("No faces detected. Please try a different image.")
 
-            # Display the number of detected faces
-            st.write(f"Number of faces detected: {len(boxes)}")
-        else:
-            st.warning("No faces detected. Please try a different image.")
+# Query submission logic
+if submit_button:
+    if user_query:
+        with st.spinner("Analyzing and generating response..."):
+            if st.session_state.documents:
+                retrieved_document = retrieve_documents(user_query, st.session_state.documents)
+                st.write("Retrieved Document: Here are the extracted details:")
+                st.write(retrieved_document)
+
+            # Prepare to use the Gemini API
+            api2_key = os.getenv("GOOGLE_API_KEY")
+            if api2_key:
+                genai.configure(api_key=api2_key)
+                model = genai.GenerativeModel("gemini-1.5-flash")
+
+                # Generate content using the Gemini model
+                response = model.generate_content(user_query)
+
+                # Handle the response
+                if response:
+                    generated_text = response.text
+                    st.write("Model Response:")
+                    st.write(generated_text)  # Display the generated text cleanly
+                else:
+                    st.warning("No response received from the Gemini model.")
+            else:
+                st.error("Google API key is missing. Check your .env file.")
+
+        # Clear the documents after submission
+        st.session_state.documents.clear()
+    else:
+        st.error("Please enter a query before submitting.")
 
 # Display message if no documents are available
 if not st.session_state.documents:
