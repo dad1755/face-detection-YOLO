@@ -86,22 +86,20 @@ if uploaded_file is not None:
             st.write("Analysis Result: Here is the content of the uploaded document:")
             st.write(analysis_result)
 
-        # Handle image file upload
-        elif file_type in ["image/jpeg", "image/png"]:
-            image = Image.open(uploaded_file)
+    # Handle image file upload
+    elif file_type in ["image/jpeg", "image/png"]:
+        image = Image.open(uploaded_file)
 
-            # Automatically detect faces after uploading an image
-            detected_faces = detect_faces(image, st.session_state.model)
-    
-            # Extract the bounding box coordinates
-            boxes = detected_faces.xyxy
+        # Automatically detect faces after uploading an image
+        detected_faces = detect_faces(image, st.session_state.model)
+        boxes = detected_faces.xyxy
 
-            # Check if any boxes (faces) are detected
+        # Check if any boxes (faces) are detected
         if boxes is not None and len(boxes) > 0:
             # Draw bounding boxes on the image
             image_with_boxes = draw_bounding_boxes(image.copy(), boxes)
             st.image(image_with_boxes, caption='Detected Faces', channels="RGB")
-        
+
             # Display the number of detected faces
             st.write(f"Number of faces detected: {len(boxes)}")
         else:
