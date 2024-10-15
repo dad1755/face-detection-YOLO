@@ -10,7 +10,6 @@ import os
 
 # Access the Google API key using st.secrets
 api_key = st.secrets["general"]["GOOGLE_API_KEY"]
-print(f"Loaded API key: {api_key}")  # Debugging line to verify if the API key is loaded
 
 # A simple document retrieval function
 def retrieve_documents(query, documents):
@@ -88,19 +87,16 @@ if uploaded_file is not None:
     # Handle image file upload
     elif file_type in ["image/jpeg", "image/png"]:
         image = Image.open(uploaded_file)
+        detected_faces = detect_faces(image, st.session_state.model)  # Automatically detect faces
+        boxes = detected_faces.xyxy
 
-        # Add a face detection button
-        if st.button("Face Detection"):
-            detected_faces = detect_faces(image, st.session_state.model)
-            boxes = detected_faces.xyxy
-
-            # Draw bounding boxes on the image only if boxes are detected
-            if boxes is not None and len(boxes) > 0:
-                image_with_boxes = draw_bounding_boxes(image.copy(), boxes)
-                st.image(image_with_boxes, caption='Detected Faces', channels="RGB")
-                st.write(f"Number of faces detected: {len(boxes)}")
-            else:
-                st.warning("No faces detected. Please try a different image.")
+        # Draw bounding boxes on the image only if boxes are detected
+        if boxes is not None and len(boxes) > 0:
+            image_with_boxes = draw_bounding_boxes(image.copy(), boxes)
+            st.image(image_with_boxes, caption='Detected Faces', channels="RGB")
+            st.write(f"Number of faces detected: {len(boxes)}")
+        else:
+            st.warning("No faces detected. Please try a different image.")
 
 # Query submission logic
 if submit_button:
