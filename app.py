@@ -85,21 +85,21 @@ if uploaded_file is not None:
             st.write("Analysis Result: Here is the content of the uploaded document:")
             st.write(analysis_result)
 
-# Handle image file upload
-elif file_type in ["image/jpeg", "image/png"]:
-    image = Image.open(uploaded_file)
+        # Handle image file upload
+        elif file_type in ["image/jpeg", "image/png"]:
+            image = Image.open(uploaded_file)
 
-    # Automatically detect faces after uploading an image
-    detected_faces = detect_faces(image, st.session_state.model)
-    boxes = detected_faces.xyxy
+            # Automatically detect faces after uploading an image
+            detected_faces = detect_faces(image, st.session_state.model)
+            boxes = detected_faces.xyxy
 
-    # Draw bounding boxes on the image only if boxes are detected
-    if boxes is not None and len(boxes) > 0:
-        image_with_boxes = draw_bounding_boxes(image.copy(), boxes)
-        st.image(image_with_boxes, caption='Detected Faces', channels="RGB")
-        st.write(f"Number of faces detected: {len(boxes)}")
-    else:
-        st.warning("No faces detected. Please try a different image.")
+            # Draw bounding boxes on the image only if boxes are detected
+        if boxes is not None and len(boxes) > 0:
+            image_with_boxes = draw_bounding_boxes(image.copy(), boxes)
+            st.image(image_with_boxes, caption='Detected Faces', channels="RGB")
+            st.write(f"Number of faces detected: {len(boxes)}")
+        else:
+            st.warning("No faces detected. Please try a different image.")
 
 
 # Query submission logic
