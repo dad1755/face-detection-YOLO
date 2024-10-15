@@ -50,12 +50,12 @@ st.markdown("""
         .stButton > button { padding: 10px 20px; }
         .stFileUploader { margin-top: 20px; margin-bottom: 20px; }
     </style>
-    #🦙💬 G10
-    <h1 style='text-align: center; margin: 0;'>🎈💬 G10</h1>
+   
+    <h1 style='text-align: center; margin: 0;'>🎈 G10</h1>
     <h3 style='text-align: center; margin: 0;'>Face Counter Apps</h3>
 """, unsafe_allow_html=True)
 
-# Initialize the documents list
+# Initialize the documents list  #🦙💬 G10
 if 'documents' not in st.session_state:
     st.session_state.documents = []
 
