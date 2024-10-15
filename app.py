@@ -12,8 +12,7 @@ from dotenv import load_dotenv
 # Load environment variables from .env file
 load_dotenv()
 api_key = os.getenv("GOOGLE_API_KEY")
-print(f"Loaded API key: {api_key}")  # Debugging line
-
+print(f"Loaded API key: {api_key}")  # Debugging line to verify if the API key is loaded
 
 # A simple document retrieval function
 def retrieve_documents(query, documents):
@@ -67,7 +66,7 @@ if 'model' not in st.session_state:
 
 # Create a form for input and submission
 with st.form(key='query_form', clear_on_submit=True):
-    user_query = st.text_input("Please ask something, power by Google Gemini:", placeholder="Enter your query here...", max_chars=200)
+    user_query = st.text_input("Please ask something, powered by Google Gemini:", placeholder="Enter your query here...", max_chars=200)
     submit_button = st.form_submit_button("Submit")
 
 # Add a file uploader for document and image
