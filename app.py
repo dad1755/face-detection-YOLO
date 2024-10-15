@@ -1,6 +1,5 @@
 import streamlit as st
 import random
-import requests
 from PIL import Image, ImageDraw
 from huggingface_hub import hf_hub_download
 from ultralytics import YOLO
@@ -37,7 +36,7 @@ def draw_bounding_boxes(image, boxes):
 # Centered title with responsive styling
 st.markdown("""
     <style>
-        @media (max-width: 900px) {
+        @media (max-width: 600px) {
             h1 { font-size: 70px; line-height: 1.2; }
             h3 { font-size: 16px; line-height: 1.1; }
             .stTextInput > div > input {
@@ -52,11 +51,15 @@ st.markdown("""
             .stTextInput > div > input {
                 font-size: 20px !important;
                 height: 56px !important;
-                width: 99% !important;
+                width: 80% !important;
             }
         }
         .stButton > button { padding: 10px 20px; }
         .stFileUploader { margin-top: 20px; margin-bottom: 20px; }
+        /* Mobile specific container for query form */
+        .mobile-container {
+            max-width: 100% !important;
+        }
     </style>
     <h1 style='text-align: center; margin: 0;'>🦙💬 G10</h1>
     <h3 style='text-align: center; margin: 0;'>Face Counter Apps</h3>
@@ -70,10 +73,14 @@ if 'documents' not in st.session_state:
 if 'model' not in st.session_state:
     st.session_state.model = load_model()
 
-# Create a form for input and submission
-with st.form(key='query_form', clear_on_submit=True):
-    user_query = st.text_input("Dont have image to count face ? Submit your query 💬 📚", placeholder="Enter your query here...", max_chars=200)
-    submit_button = st.form_submit_button("Submit")
+# Use a container to control layout on mobile view
+with st.container():
+    with st.form(key='query_form', clear_on_submit=True):
+        st.markdown("<div class='mobile-container'>", unsafe_allow_html=True)
+        user_query = st.text_input("Dont have image to count face ? Submit your query 💬 📚", 
+                                   placeholder="Enter your query here...", max_chars=200, label_visibility="collapsed")
+        st.markdown("</div>", unsafe_allow_html=True)
+        submit_button = st.form_submit_button("Submit")
 
 # Add a file uploader for document and image
 uploaded_file = st.file_uploader("Upload a document (text file) or image (jpg/png)", type=["jpg", "jpeg", "png"], label_visibility="collapsed")
@@ -111,7 +118,6 @@ if uploaded_file is not None:
             st.write(f"Number of faces detected: {len(boxes)}")
         else:
             st.warning("No faces detected. Please try a different image.")
-
 
 # Query submission logic
 if submit_button:
