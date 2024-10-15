@@ -11,6 +11,9 @@ from dotenv import load_dotenv
 
 # Load environment variables from .env file
 load_dotenv()
+api2_key = os.getenv("GOOGLE_API_KEY")
+print(f"Loaded API key: {api2_key}")  # Debugging line
+
 
 # A simple document retrieval function
 def retrieve_documents(query, documents):
@@ -112,9 +115,9 @@ if submit_button:
                 st.write(retrieved_document)
 
             # Prepare to use the Gemini API
-            api_key = os.getenv("GOOGLE_API_KEY")
+            api2_key = os.getenv("GOOGLE_API_KEY")
             if api_key:
-                genai.configure(api_key=api_key)
+                genai.configure(api_key=api2_key)
                 model = genai.GenerativeModel("gemini-1.5-flash")
 
                 # Generate content using the Gemini model
